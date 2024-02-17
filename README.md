@@ -24,10 +24,10 @@ Get alphas from PDF
 
 - Alex
   - Get NYT API working
-  - 75-100 alphas
+  - 76-100 alphas
 - Thalia
   - Bloomberg access
-  - 50-75 alphas
+  - 51-75 alphas
 - Wendy
   - 0-25 alphas
 - Peter
