@@ -31,4 +31,4 @@ Get alphas from PDF
 - Wendy
   - 0-25 alphas
 - Peter
-  - 50-75 alphas
+  - 26-50 alphas
