@@ -6,6 +6,18 @@ Factor investing model
 
 - Calculate alphas and load into dataframes with aligned datetime index
 
+## NYT API
+
+[NYT API Documentation](https://developer.nytimes.com/apis)
+
+**Currently enabled:**
+
+- Archive API
+- Article Search API
+- Most Popular API
+- RSS Feeds
+- Times Wire API
+
 ### To-Do
 
 Get alphas from PDF
