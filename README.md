@@ -1,6 +1,12 @@
 # AlgoryFactorInvesting
 
-Factor investing model
+Factor investing model, testing 100 alphas and BERT sentiment analysis.
+
+Install required Python packages.
+
+```
+pip install -r requirements.txt
+```
 
 ## Approach
 
@@ -23,7 +29,7 @@ Factor investing model
 Get alphas from PDF
 
 - Alex
-  - Get NYT API working
+  - Get WSJ API working. Begin preprocessing data for sentiment analysis
   - 76-100 alphas
 - Thalia
   - Bloomberg access
@@ -32,3 +38,12 @@ Get alphas from PDF
   - 0-25 alphas
 - Peter
   - 26-50 alphas
+
+<!--
+### Reset .gitignore if it doesn't work
+
+```
+git rm -rf --cached .
+git add .
+```
+-->
