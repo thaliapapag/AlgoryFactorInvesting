@@ -14,6 +14,17 @@ import datetime
 
 root = "Data"
 
+# https://stackoverflow.com/questions/33061302/dictionary-of-pandas-dataframe-to-json
+
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        # default is the function applied to objects not already json serializable
+        if hasattr(obj, "to_json"):
+            return obj.to_json(orient="columns")
+        return json.JSONEncoder.default(self, obj)
+
+
 # For S&P 500, we can pull GICS from Wikipedia
 
 
@@ -60,8 +71,18 @@ def stockHistory(ticker: str, start, end, to_json=True):
     stock = yf.Ticker(ticker).history(start=start, end=end)
     # stock.name = ticker
     # print(stock)
-    stock.reset_index(inplace=True)
-    return stock.to_json(orient="split")
+    # stock.reset_index(inplace=True)
+    # return stock.to_json(orient="columns")
+    return stock
+
+
+def dictdf_to_dict(df):
+    """
+    Converts dictionary of dataframes into complete dictionary for json
+    """
+    data_dict = {key: df[key].to_dict(orient="records") for key in df.keys()}
+
+    return data_dict
 
 
 # https://stackoverflow.com/questions/20776189/concurrent-futures-vs-multiprocessing-in-python-3
@@ -88,6 +109,7 @@ def get_spy_data(
         )
 
     # Can't pickle dataframe :(
+    # I can properly serialize and deserialize as str/dict but this is very low priority
     # for ticker in tqdm(tickers):
     #     with mp.Pool(processes=processes) as pool:
     #         results = [
@@ -108,8 +130,9 @@ def get_spy_data(
     #     stock_info[stock.name] = stock
 
     if dump_json:
+        dictdf_to_dict(stock_info)
         with open(os.path.join(root, "stock_info.json"), "w") as f:
-            json.dump(stock_info, f)
+            json.dump(stock_info, f, indent=4, cls=JSONEncoder)
 
     return stock_info
 

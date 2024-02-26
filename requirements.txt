@@ -4,3 +4,4 @@ requests_cache
 requests_ratelimiter
 pyrate_limiter
 tqdm
+pandas_market_calendars
