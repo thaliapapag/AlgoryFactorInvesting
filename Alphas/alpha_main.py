@@ -7,6 +7,8 @@ Store each dataframe/alpha in a hashmap. Key,value = alpha#, dataframe
 Also, store key metrics for each companies in their own company-wide dataframes (we can also store and load from json)
 """
 
-import multiprocessing as mp
+from data_load import load_data
 
-print(mp.cpu_count())
+stock_data_dict = load_data()
+
+alpha_dict = load_data("alpha_src.json")

@@ -15,6 +15,7 @@ pip install -r requirements.txt
 ## NYT API
 
 [NYT API Documentation](https://developer.nytimes.com/apis)
+[UNUSUAL WHALES]
 
 **Currently enabled:**
 

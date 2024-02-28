@@ -89,7 +89,6 @@ def dictdf_to_dict(df):
 def get_spy_data(
     start_date="2018-1-1",
     end_date="2023-11-1",
-    dump_json=True,
     processes=10,
     seconds=10,
 ) -> dict:
@@ -100,16 +99,31 @@ def get_spy_data(
     print(f"You have {mp.cpu_count()} cores.")
 
     tickers = get_spy_tickers()
-    stock_info = {}
-    results = []
+    ticker_list = []  # tickers to save to spy_tickers.txt
+    # we can parse spy_tickers.txt to pick out the specific stocks we want to test on for alpha calculation
 
-    for ticker in tqdm(tickers):
-        stock_info[ticker] = stockHistory(
-            ticker, start=start_date, end=end_date, to_json=dump_json
-        )
+    for ticker in tqdm(tickers[:10]):
+        stock_info = stockHistory(ticker, start=start_date, end=end_date, to_json=True)
 
-    # Can't pickle dataframe :(
-    # I can properly serialize and deserialize as str/dict but this is very low priority
+        if stock_info.empty:
+            print(f"Ticker {ticker} encountered error. Cutting ticker from stock info.")
+            continue
+
+        # dictdf_to_dict(stock_info)
+        save_path = f"Stock_History/{ticker}_info.json"
+        ticker_list.append(ticker)
+
+        print(f"List of tickers downloaded: {ticker_list}")
+
+        with open(os.path.join(root, save_path), "w") as f:
+            json.dump(stock_info, f, indent=4, cls=JSONEncoder)
+
+    with open(os.path.join(root, "spy_tickers.txt"), "w") as f:
+        for ticker in ticker_list:
+            f.write(ticker + "\n")
+
+    # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_pickle.html
+    # I can properly serialize and deserialize but this is very low priority
     # for ticker in tqdm(tickers):
     #     with mp.Pool(processes=processes) as pool:
     #         results = [
@@ -128,13 +142,6 @@ def get_spy_data(
 
     # for stock in results:
     #     stock_info[stock.name] = stock
-
-    if dump_json:
-        dictdf_to_dict(stock_info)
-        with open(os.path.join(root, "stock_info.json"), "w") as f:
-            json.dump(stock_info, f, indent=4, cls=JSONEncoder)
-
-    return stock_info
 
 
 def get_spy_tickers() -> list:
