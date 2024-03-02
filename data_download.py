@@ -12,7 +12,7 @@ import os
 import json
 import datetime
 
-root = "Data"
+root = "Alphas/Data"
 
 # https://stackoverflow.com/questions/33061302/dictionary-of-pandas-dataframe-to-json
 

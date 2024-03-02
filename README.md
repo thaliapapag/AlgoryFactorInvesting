@@ -8,6 +8,8 @@ Install required Python packages.
 pip install -r requirements.txt
 ```
 
+Run data_download.py to get ticker data.
+
 ## Approach
 
 - Calculate alphas and load into dataframes with aligned datetime index
@@ -15,7 +17,6 @@ pip install -r requirements.txt
 ## NYT API
 
 [NYT API Documentation](https://developer.nytimes.com/apis)
-[UNUSUAL WHALES]
 
 **Currently enabled:**
 

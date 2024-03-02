@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pandas_market_calendars as mcal
-import datetime
+from datetime import datetime
 
 
 def adv(hst, d):

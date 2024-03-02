@@ -4,28 +4,33 @@ import os
 
 # from helper import *
 from ALPHA_TEST import *  # we should move the general helper functions into helper.py
-from data_load import load_data, load_alpha_helper_data
-from helper import vwap
+from data_load import load_stock_history_data, load_alpha_helper_data, load_tickers
+from helper import vwap, adv
 
 # dict.update()
 # I'm going to rewrite these later
 
-root = "Data"
+cwd_folder = os.getcwd().split("\\")[-1]
+root = "Alphas/Data" if cwd_folder == "AlgoryFactorInvesting" else "Data"
+
 alpha_path = "alpha_main.json"
 helper_path = "alpha_src.json"
+alpha_helper_dict = {}
+alpha_dict = {}
+tickers = load_tickers(root)
 
 # Columns: stocks. Index: time
-stock_history = load_data()
+stock_history = load_stock_history_data(root)
 
-alpha_dict = (
-    load_data(alpha_path) if os.path.exists(os.path.join(root, alpha_path)) else {}
-)
-# Dictionary of DataFrames with each DataFrame representing a helper alpha (metric that must be ranked cross-sectionally or across industry). Columns: stocks. Index: time
-alpha_helper_dict = (
-    load_alpha_helper_data(helper_path)
-    if os.path.exists(os.path.join(root, helper_path))
-    else {}
-)
+# alpha_dict = (
+#     load_data(alpha_path) if os.path.exists(os.path.join(root, alpha_path)) else {}
+# )
+# # Dictionary of DataFrames with each DataFrame representing a helper alpha (metric that must be ranked cross-sectionally or across industry). Columns: stocks. Index: time
+# alpha_helper_dict = (
+#     load_alpha_helper_data(helper_path)
+#     if os.path.exists(os.path.join(root, helper_path))
+#     else {}
+# )
 
 """
 alpha_dict is a hashmap of DataFrames
@@ -35,33 +40,46 @@ alpha_helper_dict is a hashmap (alpha) of a hashmap (sub-alphas/helper alphas) o
 """
 
 
-def alpha_77(hst, tickers: list):
-    # we need to map this to everything
-    helper_root = alpha_helper_dict["alpha_77"]
-    alpha_root = alpha_dict["alpha_77"]
+def alpha_77(tickers: list = tickers):
+    #  min(rank(decay_linear(((((high + low) / 2) + high) - (vwap + high)), 20.0451)),
+    #  rank(decay_linear(correlation(((high + low) / 2), adv40, 3.1614), 5.64125)))
 
+    rankdf1 = pd.DataFrame()
+    rankdf2 = pd.Series()
+
+    rankdf2.name = "a2"
+
+    # create helper alpha #1
+    # rank(decay_linear(((((high + low) / 2) + high) - (vwap + high)), 20.0451)
     for ticker in tickers:
-        pass
+        # need to properly reindex. Instead of storing these as series, throw them into a outer merge dataframe with the time index
+        hst = stock_history[ticker]
+        hst.name = ticker
+        vwap_hst = vwap(hst)
+        # (high + low) / 2) + high
+        high_low = hst["High"] + hst["Low"]
+        high_low.apply(lambda x: np.divide(x, 2))
+        # linear decay over period rounded to 20 days
+        a77_1 = decay_linear(vwap_hst, 20)
+        rankdf1[ticker] = a77_1
 
-    vwap = vwap(hst)
-    # (high + low) / 2) + high
-    hst["high_low"] = hst["High"] + hst["Low"]
-    hst["high_low"].apply(lambda x: np.divide(x / 2))
-    hst["decayed_avg"] = hst["decayed_avg"] + vwap
-    # linear decay over period rounded to 20 days
-    hst["a77_1"] = decay_linear(hst["decayed_avg"], 20)
+        print(rankdf1.index, vwap_hst.index, high_low.index, a77_1.index)
 
-    # we need to cross-sectional rank both linear decays
-    helper_root("ticker")
-    hst["rank_1"] = rank(hst["a77_1"])
+    # create helper alpha #2
+    # rank(decay_linear(correlation(((high + low) / 2), adv40, 3.1614), 5.64125)))
+    for ticker in tickers:
+        hst = stock_history[ticker]
 
-    hst["adv40"] = adv(hst, 40)
+        adv40 = adv(hst, 40)
 
-    d = 3  # Round to 3 days
-    time_series_correlation = hst["high_low"].rolling(window=3).corr(hst["adv40"])
-    hst["a77_2"] = decay_linear(time_series_correlation, 6)  # round to 6 days
+        # Round to 3 days
+        time_series_correlation = high_low.rolling(window=3).corr(adv40)
+        rankdf2[ticker] = decay_linear(time_series_correlation, 6)  # round to 6 days
 
-    return pd.DataFrame(hst[["a77_1", "a77_2"]])
+    alpha = rankdf1.merge(rankdf2, how="inner").min(axis=1)
+    print(alpha)
+
+    return alpha
 
 
 def alpha_101(hst):
@@ -69,3 +87,8 @@ def alpha_101(hst):
         (hst["High"] - hst["Low"]) + 10**-8
     )
     return hst["alpha_101"]
+
+
+if __name__ == "__main__":
+    # test alpha
+    alpha_77()
