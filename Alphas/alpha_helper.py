@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
 import os
+from tqdm import tqdm
 
 # from helper import *
 from ALPHA_TEST import *  # we should move the general helper functions into helper.py
 from data_load import load_stock_history_data, load_alpha_helper_data, load_tickers
-from helper import vwap, adv
+from helper import vwap, adv, decay_linear
 
 # dict.update()
 # I'm going to rewrite these later
@@ -45,15 +46,16 @@ def alpha_77(tickers: list = tickers):
     #  rank(decay_linear(correlation(((high + low) / 2), adv40, 3.1614), 5.64125)))
 
     rankdf1 = pd.DataFrame()
-    rankdf2 = pd.Series()
+    rankdf2 = pd.DataFrame()
 
     rankdf2.name = "a2"
 
     # create helper alpha #1
     # rank(decay_linear(((((high + low) / 2) + high) - (vwap + high)), 20.0451)
-    for ticker in tickers:
+    for ticker in tqdm(tickers):
         # need to properly reindex. Instead of storing these as series, throw them into a outer merge dataframe with the time index
         hst = stock_history[ticker]
+        # print(f"data shape: {hst.shape}")
         hst.name = ticker
         vwap_hst = vwap(hst)
         # (high + low) / 2) + high
@@ -63,20 +65,33 @@ def alpha_77(tickers: list = tickers):
         a77_1 = decay_linear(vwap_hst, 20)
         rankdf1[ticker] = a77_1
 
-        print(rankdf1.index, vwap_hst.index, high_low.index, a77_1.index)
+        # print(rankdf1.index, vwap_hst.index, high_low.index, a77_1.index)
 
     # create helper alpha #2
     # rank(decay_linear(correlation(((high + low) / 2), adv40, 3.1614), 5.64125)))
-    for ticker in tickers:
+    for ticker in tqdm(tickers):
         hst = stock_history[ticker]
 
         adv40 = adv(hst, 40)
 
         # Round to 3 days
-        time_series_correlation = high_low.rolling(window=3).corr(adv40)
+        time_series_correlation = (
+            high_low.rolling(window=3, center=True)
+            .corr(adv40.dropna(axis=0), pairwise=True)
+            .dropna(axis=0)
+        )
         rankdf2[ticker] = decay_linear(time_series_correlation, 6)  # round to 6 days
 
-    alpha = rankdf1.merge(rankdf2, how="inner").min(axis=1)
+    print(f"df1 {rankdf1}")
+    print(f"df2 {rankdf2}, {rankdf2.index}, {rankdf2.values}")
+    print(rankdf1.index.dtype, rankdf2.index.dtype)
+
+    alpha = (
+        pd.merge(rankdf1, rankdf2, left_index=True, right_index=True, how="outer")
+        .dropna(axis=0)
+        .min(axis=1)
+    )
+
     print(alpha)
 
     return alpha

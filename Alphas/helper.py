@@ -29,17 +29,22 @@ def ts_rank():
     pass
 
 
-def decay_linear(hst, col, d):
+def decay_linear(hst, d):
     weights = np.array([i for i in range(d, 0, -1)])
     sum_weights = np.sum(weights)
+    # print(hst, hst.shape)
 
-    hst["weighted_ma"] = (
-        hst[col]
-        .rolling(window=d, center=True)
-        .apply(lambda x: np.divide(np.sum(weights * x), sum_weights), raw=True)
+    # This is some spaghetti
+    weighted_ma = hst.rolling(window=d, center=True, min_periods=1).apply(
+        lambda x: np.divide(np.sum(weights[: len(x)] * x), sum_weights), raw=False
     )
 
-    return hst["weighted_ma"]
+    # Discard inaccurate values
+    weighted_ma.shift(d)
+
+    print(weighted_ma, "INDEX", weighted_ma.index, "VALUES", weighted_ma.values)
+
+    return weighted_ma
 
 
 def correlation_days(x, y, d):
