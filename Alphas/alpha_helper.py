@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 from tqdm import tqdm
+import time
 
 # from helper import *
 from ALPHA_TEST import *  # we should move the general helper functions into helper.py
@@ -53,7 +54,6 @@ def alpha_77(tickers: list = tickers):
     # create helper alpha #1
     # rank(decay_linear(((((high + low) / 2) + high) - (vwap + high)), 20.0451)
     for ticker in tqdm(tickers):
-        # need to properly reindex. Instead of storing these as series, throw them into a outer merge dataframe with the time index
         hst = stock_history[ticker]
         # print(f"data shape: {hst.shape}")
         hst.name = ticker
@@ -106,4 +106,8 @@ def alpha_101(hst):
 
 if __name__ == "__main__":
     # test alpha
+    start = time.time()
     alpha_77()
+    # 4 seconds
+
+    print(f"Took {time.time() - start} seconds.")
