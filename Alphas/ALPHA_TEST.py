@@ -204,7 +204,8 @@ def main():
     vwap = (typical_price * data['Volume']).sum() / data['Volume']
 
 
-    print(adv(data, 180))
+    #
+    # print(adv(data, 180))
     
     #print(adv(data, 5))
 
@@ -233,9 +234,9 @@ def main():
     #Alpha#53: works 
     '''
     alpha53 = (-1 * delta((((close - low) - (high - close)) / (close - low)), 9))
-    print(alpha53)'''
-
-    #Alpha#54: 
+    print(alpha53)
+    '''
+    #Alpha#54: works 
     # ^ sign replaced with ** 
     '''
     alpha54 = ((-1 * ((low - close) * (open**5))) / ((low - high) * (close**5))) 
@@ -243,10 +244,10 @@ def main():
     '''
 
     #Alpha#55: 
-    '''
-    print((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))
-    print(rank(volume))
     
+    #print((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))
+    #print(rank(volume))
+    '''
     alpha55 = (-1 * correlation(rank(((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))), rank(volume), 6))
     print(alpha55)
     '''
