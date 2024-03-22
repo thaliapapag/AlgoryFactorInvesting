@@ -7,10 +7,22 @@ import pandas as pd
 import json
 import os
 import time
+#import pandas_market_calendars as mcal
 #from tqdm import tqdm
 
 #methods - Thalia
+'''
+def adjust_date(date):
 
+    calendar = mcal.get_calendar('NYSE')
+    
+    # Check if the given date is a trading day
+    # If it's not a trading day, find the next trading day
+    while not calendar.valid_days(start_date=date, end_date=date):
+        date += pd.Timedelta(days=1)
+    
+    return date 
+'''
 def adjust_date(date):
     while date.weekday() >= 5:
         date = date + timedelta(days=1)
@@ -38,10 +50,8 @@ def delay(x, d, date = datetime.now().date()):
         date = adjust_date(x.index[-1])
     most_recent_date = date  # Get the most recent date from the index
     x_days_ago = most_recent_date - timedelta(days=d)
-    print('x_days', x_days_ago)
-    print(x)
+
     adj_date = adjust_date(x_days_ago)
-    print('adjusted date', adj_date)
     col = x.loc[adj_date]  # Use .loc[] to retrieve the row corresponding to the date
     return col
 
@@ -99,13 +109,8 @@ def rank(x):
 
 #time-serial correlation of x and y for the past d days 
 def correlation(x, y, d):
-    d = int(d)
-    x_recent = x.tail(d)
-    y_recent = y.tail(d)
-    
-    # Calculate the correlation
-    correlation = x_recent.corr(y_recent)
-    
+    correlation = x.rolling(window=d).corr(y).dropna()
+
     return correlation
 
 #today’s value of x minus the value of x d days ago 
@@ -310,11 +315,12 @@ def main():
     # Calculate the volume-weighted average price
     vwap = (typical_price * data['Volume']).sum() / data['Volume']
 
-    # print(alpha51(close))
-    # print(alpha52(low, returns, volume))
-    # print(alpha53(close, low, high))
-    # print(alpha54(low, close, open, high))
-    # print(alpha55(close, low, high, volume))
+    #print(alpha51(close))
+    print(alpha52(low, returns, volume))
+    print('************************')
+    print(alpha53(close, low, high))
+    print(alpha54(low, close, open, high))
+    print(alpha55(close, low, high, volume))
 
     print(alpha1(data))
     print(alpha2(data))
