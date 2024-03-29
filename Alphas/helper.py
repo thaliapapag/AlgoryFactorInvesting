@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import pandas_market_calendars as mcal
 from datetime import datetime
+import random
+from tqdm import tqdm
 
 
 def adv(hst, d):
@@ -102,3 +104,29 @@ def get_market_end_date(end_date: str, change_days=1, return_type="str"):
         # "2002-01-01"
         # Format: year-month-day
     return date
+
+
+def generate_random_instructions(n: int = 1000) -> list:
+    # generating random instructions to benchmark backtest efficiency
+    res = []
+    symbols = ["AAPL", "MSFT", "SAVE", "TER", "GME", "AMGN"]
+    order_types = ["BUY", "HOLD", "SELL"]
+    quantity = lambda x: random.randrange(5, 100)
+    for _ in tqdm(range(n)):
+        instruction = []
+        """
+        order_type, symbol, quantity
+        order_type: BUY, SELL, HOLD
+        """
+        instruction.append(random.choice(symbols))
+        instruction.append(random.choice(order_types))
+        instruction.append(quantity(None))
+
+        res.append(instruction)
+
+    return res
+
+
+if __name__ == "__main__":
+    a = generate_random_instructions(100)
+    print(a)

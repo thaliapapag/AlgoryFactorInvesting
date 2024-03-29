@@ -4,13 +4,9 @@ import time
 import yfinance as yf
 import csv
 import datetime
-from data_download import get_spy_data, get_spy_index_data
-import strategy as strategy
-import adf
+import strategy
 import pandas as pd
 import os
-from ecm import Pair, get_stop_loss_thresholds
-import ecm as ecm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from helper import (
@@ -25,14 +21,17 @@ from helper import (
     remove_stop_loss_from_daytracker,
     check_stop_loss,
 )
+from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 from collections import defaultdict
+from data_download import get_spy_data, get_spy_index_data
 
 # from helper import get_market_start_date
 
-if not os.path.exists("spy.csv"):
-    get_spy_data
+if not os.path.exists(os.path.join("Data", "spy.csv")):
+    raise ("ERROR")
+    # get_spy_data()
 
 settings = strategy.get_settings()
 
@@ -65,31 +64,6 @@ class Trade:
         self.price = price
         self.timestamp = timestamp
         self.type = type
-
-
-def pair_to_orders(pair: Pair):
-    """
-    Gets pair instructions and merges them with database by index
-    @pair: Pair object
-    """
-
-    """for i in range(len(pair.instructions)):
-        instruction = pair.instructions[i]  #buy/sell, ticker, quantity
-        #position,ticker,quantity = instruction
-        
-
-        #trade_instruction = Trade("",ticker,quantity,None,None,None)
-        database.iloc[len(database.index)] = instruction"""
-    global orders, orders_index
-
-    instructions = pd.Series(pair.instructions, name=pair.name, index=orders_index)
-    print(len(instructions))
-    # print(pair.start_date, pair.end_date)
-    # instructions = series_index_to_dates(
-    #    instructions, pair.start_date, pair.end_date, orders_index
-    # )
-
-    orders = orders.merge(instructions, how="outer", left_index=True, right_index=True)
 
 
 def calculate_commission(trade):
@@ -125,7 +99,7 @@ def portfolio_value(latest=True, date: str = ""):
 
 
 def buy_stock(symbol, quantity, price, timestamp: str):  # 2018-06-20
-    global current_capital, day_number, daytracker  # Declare global to update the outer variable
+    global current_capital, day_number  # Declare global to update the outer variable
     new_trade = Trade(
         len(trades_made),
         symbol=symbol,
@@ -171,7 +145,7 @@ def sell_stock(symbol, quantity, price, timestamp):
         timestamp=timestamp,
         type="sell",
     )
-    global current_capital, daytracker  # Declare global to update the outer variable
+    global current_capital  # Declare global to update the outer variable
 
     if (
         new_trade.symbol in positions
@@ -203,11 +177,10 @@ def run_daily_instructions(current_day: str, instructions=list[list]):
     # Name: 2018-06-20, dtype: object [list([None, 'ADI', 10]) list([None, 'AJG', 10])] <class 'numpy.ndarray'> Index(['A ADI', 'A AJG'], dtype='object') <class 'str'> A AJG
 
     # [list([None, 'ADI', 10]) list([None, 'AJG', 10])] <class 'numpy.ndarray'>
+    # TODO: Add concurrency
     for instruction in instructions:
         for order in instruction:
-            order_type = order[0]
-            symbol = order[1]
-            quantity = order[2]
+            order_type, symbol, quantity = order
 
             print("CURRENT DATE", current_day, type(current_day))
 
@@ -229,7 +202,7 @@ def run_daily_instructions(current_day: str, instructions=list[list]):
             print(f"{order_type: <4} {symbol: <4} on {current_day}: {float(price):.2f}")
 
 
-def run_timeline(orders: pd.DataFrame, start_date, end_date):
+def run_timeline(orders: pd.DataFrame, start_date: str, end_date: str):
     """
     Runs all instructions from a dataframe
     """
@@ -245,6 +218,7 @@ def run_timeline(orders: pd.DataFrame, start_date, end_date):
     # database.set_index("Date", inplace=True)
     # database.sort_index(inplace=True)
 
+    # TODO: add concurrency
     for current_date in tqdm(orders.index):  # fix
         # Check if the date exists in the index
         # try:
@@ -259,31 +233,11 @@ def run_timeline(orders: pd.DataFrame, start_date, end_date):
             type(instructions.index[0]),
             instructions.index[-1],
         )"""
-        exit_hold = check_hold(
-            daytracker, positions, day_number, ecm.model_settings["HOLDING_PERIOD"]
-        )  # instructions to exit positions beyond holding period
+
         # print("VAlues: ", instructions.values.tolist(), to_sell)
-        run_daily_instructions(current_date, instructions.values.tolist() + exit_hold)
+        run_daily_instructions(current_date, instructions.values.tolist())
 
         # update daytracker. Will move into function if this works
-        if exit_hold:
-            for daily_exit_hold in exit_hold:
-                if len(daily_exit_hold) != 3:
-                    continue
-                for order_type, stock, stock_qty in daily_exit_hold:
-                    remove_from_daytracker(stock, stock_qty, daytracker)
-
-        stop_loss = check_stop_loss(
-            daytracker, stop_loss_thresholds, positions, database, day_number
-        )
-        if stop_loss:
-            run_daily_instructions(current_date, stop_loss)
-
-            for daily_stop_loss in stop_loss:
-                if len(daily_stop_loss) != 3:
-                    continue
-                for order_type, stock, stock_qty in daily_stop_loss:
-                    remove_stop_loss_from_daytracker(stock, stock_qty, daytracker)
 
         portfolio_history = save_portfolio_value(portfolio_history, current_date)
         # print(current_date)
@@ -311,12 +265,12 @@ def plot_all(series: pd.Series, start_date, end_date):
     ax1.set_xlabel("Time")
     ax1.set_ylabel("Percentage Returns")
     ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
-    ax1.set_title(f"StatArb: {start_date} - {end_date}")
+    ax1.set_title(f"Factor Investing: {start_date} - {end_date}")
     # ax2 = ax1.twinx()
     ax1.plot(
         database.index[-len(series_data_normalized) :],
         series_data_normalized.values,
-        label="StatArb",
+        label="Factor Investing",
     )
     # ax2.set_ylabel("Percentage Returns")
     # ax2.yaxis.set_major_formatter(mtick.PercentFormatter())
@@ -333,7 +287,7 @@ def plot_all(series: pd.Series, start_date, end_date):
 
     fig.show()
     print(
-        f"Spy: {spy_data.values[-1]}, {spy_data_normalized.values[-1]}%\nStatArb: {series.values[-1]},  {series_data_normalized.values[-1]}"
+        f"Spy: {spy_data.values[-1]}, {spy_data_normalized.values[-1]}%\Factor Investing Model: {series.values[-1]},  {series_data_normalized.values[-1]}"
     )
 
 
@@ -370,45 +324,6 @@ if __name__ == "__main__":
     # print(database, database.head(), database.tail(), len(database))
     # database.sort_index(inplace=True)
 
-    orders = pd.DataFrame()
-    root = "StatArb/ADF_Cointegrated"
-
-    # print(root)
-
-    if not os.path.exists(os.path.join(root, "coint.csv")):
-        print("Coint csv not found, calling adf main. Input to continue")
-        input()
-        adf.main(50)
-        time.sleep(5)
-        assert os.path.exists(os.path.join(root, "coint.csv"))
-
-    # Read to csv and convert to list. Iterating through DataFrame rows is considered an anti-pattern
-    coint_pairs = pd.read_csv(os.path.join(root, "coint.csv")).values.tolist()
-
-    pairs = []  # contains the Pair objects
-
-    for pair_set in tqdm(coint_pairs):
-        pairs.append(process_pair(pair_set, start_date, end_date))
-
-    # orders_index = database.index
-    orders_index = get_market_valid_times(
-        len(pairs[0].instructions), start_date, end_date
-    )
-    print("Converting orders to pairs")
-    for pair in tqdm(pairs):
-        instructions = pair_to_orders(pair)  # populate orders dataframe
-
-    stop_loss_thresholds = get_stop_loss_thresholds()
-    print(stop_loss_thresholds)
-
-    print("Finished converting orders to pairs")
-    orders.sort_index(inplace=True)
-    # print(orders)
-    # orders.to_csv("orders.csv", index=True)
-    # database.to_csv("database.csv", index=True)
-    # orders_index = orders.index
-    # print(orders_index[-1], type(orders_index[-1]))
-    # print(daytracker, type(daytracker))
     run_timeline(orders, orders_index[0], orders_index[-1])
     print(portfolio_history)
 
@@ -419,8 +334,6 @@ if __name__ == "__main__":
 
     time_diff = time.time() - start_time
 
-    print(
-        f"Done. Took {time_diff:.2f} seconds. Average {time_diff/len(pairs):.2f} seconds per pair."
-    )
+    print(f"Done. Took {time_diff:.2f} seconds.")
 
     plot_all(portfolio_history, start_date, end_date)
