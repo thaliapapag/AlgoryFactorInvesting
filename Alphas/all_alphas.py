@@ -7,7 +7,7 @@ import pandas as pd
 import json
 import os
 import time
-#import pandas_market_calendars as mcal
+import pandas_market_calendars as mcal
 #from tqdm import tqdm
 
 #methods - Thalia
