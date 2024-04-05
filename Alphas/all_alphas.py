@@ -12,7 +12,7 @@ import time
 
 # methods - Thalia
 
-
+'''
 def adjust_date(date):
 
     calendar = mcal.get_calendar("NYSE")
@@ -23,7 +23,7 @@ def adjust_date(date):
         date += pd.Timedelta(days=1)
 
     return date
-
+'''
 
 def adjust_date(date):
     while date.weekday() >= 5:
