@@ -9,6 +9,11 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
 
 
 def adjust_date(date):
@@ -356,7 +361,9 @@ def create_row(ticker):
     # alpha_55 = alpha55(close, low, high, volume) Removed because was returning an empty dataframe
     # print("alpha_55: ", alpha_55)
 
-    price_change = (data2['Close'].iloc[-1] - data2['Close'].iloc[0]) / data2['Close'].iloc[0] * 100 # Gives a percentage price change
+    price_change = (data2['Close'].iloc[6] - data2['Close'].iloc[0]) / data2['Close'].iloc[0] * 100 # Gives a percentage price change
+
+    # change the first .iloc[xx] value here to alter the time frame of price change: [6] is for a week, [-1] is for a year (the most recent value)
 
     new_row = [ticker, alpha_1, alpha_2, alpha_3, alpha_4, alpha_5, alpha_6, alpha_41, alpha_52, alpha_53, alpha_54, price_change]
 
@@ -385,49 +392,419 @@ def main():
     data2 = yf.download(ticker, period='1y')
     data = pd.DataFrame(data2)
 
-    row1 = create_row('GOOG')
-    row2 = create_row('AAPL')
-    row3 = create_row('MSFT')
-    row4 = create_row('DPZ')
-    row5 = create_row('MIDD')
-    row6 = create_row('AMZN')
-    row7 = create_row('TSLA')
-    row8 = create_row('NFLX')
-    row9 = create_row('META')
-    row10 = create_row('NVDA')
-    row11 = create_row('JPM')
-    row12 = create_row('BAC')
-    row13 = create_row('WFC')
-    row14 = create_row('C')
-    row15 = create_row('GS')
-    row16 = create_row('PYPL')
-    row17 = create_row('SQ')
-    row18 = create_row('V')
-    row19 = create_row('MA')
-    row20 = create_row('AXP')
-    row21 = create_row('T')
-    row22 = create_row('VZ')
-    row23 = create_row('TMUS')
-    row24 = create_row('CMCSA')
-    row25 = create_row('DIS')
+    # row1 = create_row('GOOG')
+    # row2 = create_row('AAPL')
+    # row3 = create_row('MSFT')
+    # row4 = create_row('DPZ')
+    # row5 = create_row('MIDD')
+    # row6 = create_row('AMZN')
+    # row7 = create_row('TSLA')
+    # row8 = create_row('NFLX')
+    # row9 = create_row('META')
+    # row10 = create_row('NVDA')
+    # row11 = create_row('JPM')
+    # row12 = create_row('BAC')
+    # row13 = create_row('WFC')
+    # row14 = create_row('C')
+    # row15 = create_row('GS')
+    # row16 = create_row('PYPL')
+    # row17 = create_row('SQ')
+    # row18 = create_row('V')
+    # row19 = create_row('MA')
+    # row20 = create_row('AXP')
+    # row21 = create_row('T')
+    # row22 = create_row('VZ')
+    # row23 = create_row('TMUS')
+    # row24 = create_row('CMCSA')
+    # row25 = create_row('DIS')
+
+    stock_tickers = [
+    "AAPL",  # Apple Inc.
+    "MSFT",  # Microsoft Corporation
+    "AMZN",  # Amazon.com Inc.
+    "GOOGL", # Alphabet Inc. (Google)
+    "META",    # Meta Platforms Inc. (Facebook)
+    "TSLA",  # Tesla Inc.
+    "JPM",   # JPMorgan Chase & Co.
+    "V",     # Visa Inc.
+    "PG",    # Procter & Gamble Company
+    "NVDA",  # NVIDIA Corporation
+    "MA",    # Mastercard Incorporated
+    "DIS",   # The Walt Disney Company
+    "HD",    # The Home Depot Inc.
+    "PYPL",  # PayPal Holdings Inc.
+    "NFLX",  # Netflix Inc.
+    "CMCSA", # Comcast Corporation
+    "INTC",  # Intel Corporation
+    "CSCO",  # Cisco Systems Inc.
+    "PEP",   # PepsiCo Inc.
+    "ADBE",  # Adobe Inc.
+    "CRM",   # Salesforce.com Inc.
+    "BAC",   # Bank of America Corporation
+    "KO",    # The Coca-Cola Company
+    "WMT",   # Walmart Inc.
+    "IBM",   # International Business Machines Corporation
+    "XOM",   # Exxon Mobil Corporation
+    "MRK",   # Merck & Co. Inc.
+    "NKE",   # NIKE Inc.
+    "PFE",   # Pfizer Inc.
+    "ABBV",  # AbbVie Inc.
+    "MO",    # Altria Group Inc.
+    "ORCL",  # Oracle Corporation
+    "T",     # AT&T Inc.
+    "UNH",   # UnitedHealth Group Incorporated
+    "CVX",   # Chevron Corporation
+    "VZ",    # Verizon Communications Inc.
+    "TMO",   # Thermo Fisher Scientific Inc.
+    "COST",  # Costco Wholesale Corporation
+    "ABT",   # Abbott Laboratories
+    "AMGN",  # Amgen Inc.
+    "LMT",   # Lockheed Martin Corporation
+    "AVGO",  # Broadcom Inc.
+    "TXN",   # Texas Instruments Incorporated
+    "HON",   # Honeywell International Inc.
+    "NEE",   # NextEra Energy Inc.
+    "DHR",   # Danaher Corporation
+    "SBUX",  # Starbucks Corporation
+    "UPS",   # United Parcel Service Inc.
+    "BA",    # The Boeing Company
+    "LLY",   # Eli Lilly and Company
+    "AMD",   # Advanced Micro Devices Inc.
+    "MCD",   # McDonald's Corporation
+    "MMM",   # 3M Company
+    "GS",    # The Goldman Sachs Group Inc.
+    "CAT",   # Caterpillar Inc.
+    "FDX",   # FedEx Corporation
+    "CVS",   # CVS Health Corporation
+    "TGT",   # Target Corporation
+    "BKNG",  # Booking Holdings Inc.
+    "CI",    # Cigna Corporation
+    "BDX",   # Becton, Dickinson and Company
+    "MS",    # Morgan Stanley
+    "LOW",   # Lowe's Companies Inc.
+    "GE",    # General Electric Company
+    "F",     # Ford Motor Company
+    "DUK",   # Duke Energy Corporation
+    "SO",    # The Southern Company
+    "C",     # Citigroup Inc.
+    "AXP",   # American Express Company
+    "GM",    # General Motors Company
+    "USB",   # U.S. Bancorp
+    "INTU",  # Intuit Inc.
+    "AMT",   # American Tower Corporation
+    "WFC",   # Wells Fargo & Company
+    "RTX",   # Raytheon Technologies Corporation
+    "BLK",   # BlackRock Inc.
+    "SPG",   # Simon Property Group Inc.
+    "CL",    # Colgate-Palmolive Company
+    "PLD",   # Prologis Inc.
+    "MET",   # MetLife Inc.
+    "MMC",   # Marsh & McLennan Companies Inc.
+    "MDT",   # Medtronic plc
+    "ZTS",   # Zoetis Inc.
+    "SO",    # The Southern Company
+    "KMB",   # Kimberly-Clark Corporation
+    "EQIX",  # Equinix Inc.
+    "REGN",  # Regeneron Pharmaceuticals Inc.
+    "GD",    # General Dynamics Corporation
+    "ICE",   # Intercontinental Exchange Inc.
+    "CSX",   # CSX Corporation
+    "EMR",   # Emerson Electric Co.
+    "CCI",   # Crown Castle International Corp.
+    "VRTX",  # Vertex Pharmaceuticals Incorporated
+    "APD",   # Air Products and Chemicals Inc.
+    "ADI",   # Analog Devices Inc.
+    "APTV",  # Aptiv PLC
+    "TJX",   # The TJX Companies Inc.
+    "AEP",   # American Electric Power Company Inc.
+    "NOC",   # Northrop Grumman Corporation
+    "ES",    # Eversource Energy
+    "PSX",   # Phillips 66
+    "MMC",   # Marsh & McLennan Companies Inc.
+    "NEM",   # Newmont Corporation
+    "EW",    # Edwards Lifesciences Corporation
+    "ETN",   # Eaton Corporation plc
+    "HUM",   # Humana Inc.
+    "ECL",   # Ecolab Inc.
+    "AMAT",  # Applied Materials Inc.
+    "EL",    # The Estée Lauder Companies Inc.
+    "SRE",   # Sempra Energy
+    "PEG",   # Public Service Enterprise Group Incorporated
+    "FIS",   # Fidelity National Information Services Inc.
+    "AON",   # Aon plc
+    "EBAY",  # eBay Inc.
+    "CME",   # CME Group Inc.
+    "MCO",   # Moody's Corporation
+    "BMY",   # Bristol-Myers Squibb Company
+    "SYY",   # Sysco Corporation
+    "WBA",   # Walgreens Boots Alliance Inc.
+    "DXCM",  # DexCom Inc.
+    "WELL",  # Welltower Inc.
+    "ORLY",  # O'Reilly Automotive Inc.
+    "LHX",   # L3Harris Technologies Inc.
+    "LIN",   # Linde plc
+    "D",     # Dominion Energy Inc.
+    "FTV",   # Fortive Corporation
+    "ROST",  # Ross Stores Inc.
+    "GD",    # General Dynamics Corporation
+    "SCHW",  # The Charles Schwab Corporation
+    "CMS",   # CMS Energy Corporation
+    "A",     # Agilent Technologies Inc.
+    "KEYS",  # Keysight Technologies Inc.
+    "DG",    # Dollar General Corporation
+    "QRVO",  # Qorvo Inc.
+    "RMD",   # ResMed Inc.
+    "LUV",   # Southwest Airlines Co.
+    "TT",    # Trane Technologies plc
+    "PEG",   # Public Service Enterprise Group Incorporated
+    "BK",    # The Bank of New York Mellon Corporation
+    "MTD",   # Mettler-Toledo International Inc.
+    "EFX",   # Equifax Inc.
+    "PGR",   # The Progressive Corporation
+    "IDXX",  # IDEXX Laboratories Inc.
+    "MCK",   # McKesson Corporation
+    "KMI",   # Kinder Morgan Inc.
+    "TYL",   # Tyler Technologies Inc.
+    "HCA",   # HCA Healthcare Inc.
+    "IQV",   # IQVIA Holdings Inc.
+    "VFC",   # V.F. Corporation
+    "RSG",   # Republic Services Inc.
+    "VRSK",  # Verisk Analytics Inc.
+    "PAYX",  # Paychex Inc.
+    "PH",    # Parker-Hannifin Corporation
+    "PEAK",  # Healthpeak Properties Inc.
+    "CTSH",  # Cognizant Technology Solutions Corporation
+    "NTRS",  # Northern Trust Corporation
+    "AKAM",  # Akamai Technologies Inc.
+    "AWK",   # American Water Works Company Inc.
+    "ESS",   # Essex Property Trust Inc.
+    "ULTA",  # Ulta Beauty Inc.
+    "OTIS",  # Otis Worldwide Corporation
+    "MNST",  # Monster Beverage Corporation
+    "CTLT",  # Catalent Inc.
+    "TTWO",  # Take-Two Interactive Software Inc.
+    "PAYC",  # Paycom Software Inc.
+    "WST",   # West Pharmaceutical Services Inc.
+    "CARR",  # Carrier Global Corporation
+    "TFX",   # Teleflex Incorporated
+    "CDNS",  # Cadence Design Systems Inc.
+    "DRI",   # Darden Restaurants Inc.
+    "DTE",   # DTE Energy Company
+    "ATO",   # Atmos Energy Corporation
+    "TDY",   # Teledyne Technologies Incorporated
+    "LH",    # Laboratory Corporation of America Holdings
+    "GWW",   # W.W. Grainger Inc.
+    "CBRE",  # CBRE Group Inc.
+    "FLT",   # FleetCor Technologies Inc.
+    "HII",   # Huntington Ingalls Industries Inc.
+    "KHC",   # The Kraft Heinz Company
+    "CDW",   # CDW Corporation
+    "ROL",   # Rollins Inc.
+    "LRCX",  # Lam Research Corporation
+    "WAT",   # Waters Corporation
+    "TYL",   # Tyler Technologies Inc.
+    "FFIV",  # F5 Networks Inc.
+    "MSI",   # Motorola Solutions Inc.
+    "WDC",   # Western Digital Corporation
+    "CMI",   # Cummins Inc.
+    "K",     # Kellogg Company
+    "RHI",   # Robert Half International Inc.
+    "KEY",   # KeyCorp
+    "HES",   # Hess Corporation
+    "AKZOY", # Akzo Nobel N.V.
+    "BAX",   # Baxter International Inc.
+    "CINF",  # Cincinnati Financial Corporation
+    "ANSS",  # ANSYS Inc.
+    "CBOE",  # Cboe Global Markets Inc.
+    "PXD",   # Pioneer Natural Resources Company
+    "CTVA",  # Corteva Inc.
+    "PKG",   # Packaging Corporation of America
+    "HSY",   # The Hershey Company
+    "SNPS",  # Synopsys Inc.
+    "COO",   # The Cooper Companies Inc.
+    "RF",    # Regions Financial Corporation
+    "AEE",   # Ameren Corporation
+    "ATO",   # Atmos Energy Corporation
+    "ROK",   # Rockwell Automation Inc.
+    "DXC",   # DXC Technology Company
+    "AME",   # AMETEK Inc.
+    "AZO",   # AutoZone Inc.
+    "LDOS",  # Leidos Holdings Inc.
+    "PEAK",  # Healthpeak Properties Inc.
+    "JNPR",  # Juniper Networks Inc.
+    "MLM",   # Martin Marietta Materials Inc.
+    "MGM",   # MGM Resorts International
+    "WY",    # Weyerhaeuser Company
+    "CMS",   # CMS Energy Corporation
+    "NTRS",  # Northern Trust Corporation
+    "ETSY",  # Etsy Inc.
+    "FLT",   # FleetCor Technologies Inc.
+    "ODFL",  # Old Dominion Freight Line Inc.
+    "AVB",   # AvalonBay Communities Inc.
+    "AIZ",   # Assurant Inc.
+    "WRK",   # WestRock Company
+    "FTI",   # TechnipFMC plc
+    "EXPD",  # Expeditors International of Washington Inc.
+    "GL",    # Globe Life Inc.
+    "HST",   # Host Hotels & Resorts Inc.
+    "URI",   # United Rentals Inc.
+    "NVR",   # NVR Inc.
+    "RCL",   # Royal Caribbean Group
+    "LKQ",   # LKQ Corporation
+    "WAB",   # Westinghouse Air Brake Technologies Corporation
+    "WHR",   # Whirlpool Corporation
+    "PVH",   # PVH Corp.
+    "MLM",   # Martin Marietta Materials Inc.
+    "LKQ",   # LKQ Corporation
+    "AZO",   # AutoZone Inc.
+    "MOS",   # The Mosaic Company
+    "HBI",   # Hanesbrands Inc.
+    "MKC",   # McCormick & Company Incorporated
+    "AMP",   # Ameriprise Financial Inc.
+    "HOLX",  # Hologic Inc.
+    "TPR",   # Tapestry Inc.
+    "VMC",   # Vulcan Materials Company
+    "JBHT",  # J.B. Hunt Transport Services Inc.
+    "LEG",   # Leggett & Platt Incorporated
+    "WU",    # Western Union Company
+    "IPGP",  # IPG Photonics Corporation
+    "COTY",  # Coty Inc.
+    "HAS",   # Hasbro Inc.
+    "NUE",   # Nucor Corporation
+    "BKR",   # Baker Hughes Company
+    "HPE",   # Hewlett Packard Enterprise Company
+    "VTRS",  # Viatris Inc.
+    "KEYS",  # Keysight Technologies Inc.
+    "GLW",   # Corning Incorporated
+    "OKE",   # ONEOK Inc.
+    "IT",    # Gartner Inc.
+    "FE",    # FirstEnergy Corp.
+    "PNW",   # Pinnacle West Capital Corporation
+    "GRMN",  # Garmin Ltd.
+    "SWK",   # Stanley Black & Decker Inc.
+    "CNC",   # Centene Corporation
+    "PKG",   # Packaging Corporation of America
+    "GPN",   # Global Payments Inc.
+    "TDG",   # TransDigm Group Incorporated
+    "BIO",   # Bio-Rad Laboratories Inc.
+    "ARE",   # Alexandria Real Estate Equities Inc.
+    "ANET",  # Arista Networks Inc.
+    "IPG",   # The Interpublic Group of Companies Inc.
+    "TSCO",  # Tractor Supply Company
+    "LDOS",  # Leidos Holdings Inc.
+    "ALLE",  # Allegion plc
+    "KMX",   # CarMax Inc.
+    "MHK",   # Mohawk Industries Inc.
+    "CAG",   # Conagra Brands Inc.
+    "WYNN",  # Wynn Resorts Limited
+    "EXR",   # Extra Space Storage Inc.
+    "KMI",   # Kinder Morgan Inc.
+    "AVY",   # Avery Dennison Corporation
+    "HII",   # Huntington Ingalls Industries Inc.
+    "TDG",   # TransDigm Group Incorporated
+    "CPRT",  # Copart Inc.
+    "NDAQ",  # Nasdaq Inc.
+    "IP",    # International Paper Company
+    "FRT",   # Federal Realty Investment Trust
+    "VNO",   # Vornado Realty Trust
+    "HIG",   # Hartford Financial Services Group Inc.
+    "RMD",   # ResMed Inc.
+    "CNP",   # CenterPoint Energy Inc.
+    "SNV",   # Synovus Financial Corp.
+    "PKG",   # Packaging Corporation of America
+    "HBI",   # Hanesbrands Inc.
+    "FFIV",  # F5 Networks Inc.
+    "PHM",   # PulteGroup Inc.
+    "ALK",   # Alaska Air Group Inc.
+    "LNT",   # Alliant Energy Corporation
+    "MTB",   # M&T Bank Corporation
+    "QRVO",  # Qorvo Inc.
+    "LVS",   # Las Vegas Sands Corp.
+    "NTAP",  # NetApp Inc.
+    "ALLE",  # Allegion plc
+    "AOS",   # A. O. Smith Corporation
+    "HII",   # Huntington Ingalls Industries Inc.
+    "HOLX",  # Hologic Inc.
+    "PNR",   # Pentair plc
+    "EXPD",  # Expeditors International of Washington Inc.
+    "KEY",   # KeyCorp
+    "DHI",   # D.R. Horton Inc.
+    "NUE",   # Nucor Corporation
+    "MAS",   # Masco Corporation
+    "LNC",   # Lincoln National Corporation
+    "BR",    # Broadridge Financial Solutions Inc.
+    "RHI",   # Robert Half International Inc.
+    "J",     # Jacobs Engineering Group Inc.
+    "HSIC",  # Henry Schein Inc.
+    "NWSA",  # News Corporation
+    "FMC",   # FMC Corporation
+    "REG",   # Regency Centers Corporation
+    "WRB",   # W. R. Berkley Corporation
+    "GILD",  # Gilead Sciences Inc.
+    "INCY",  # Incyte Corporation
+    "PNW",   # Pinnacle West Capital Corporation
+    "JCI",   # Johnson Controls International plc
+    "ROL",   # Rollins Inc.
+    "WHR",   # Whirlpool Corporation
+    "VNO",   # Vornado Realty Trust
+    "TSCO",  # Tractor Supply Company
+    "CNP",   # CenterPoint Energy Inc.
+    "VTR",   # Ventas Inc.
+    "OTIS",  # Otis Worldwide Corporation
+    "SNV",   # Synovus Financial Corp.
+    "CINF",  # Cincinnati Financial Corporation
+    "IRM",   # Iron Mountain Incorporated
+    "AJG",   # Arthur J. Gallagher & Co.
+    "ZBRA",  # Zebra Technologies Corporation
+    "HST",   # Host Hotels & Resorts Inc.
+    "ROL",   # Rollins Inc.
+    "CLX",   # The Clorox Company
+    ]
+
+############### CREATE THE ROWS AND TURN THEM INTO A CSV. THIS IS WHERE TO MAKE A NEW DATASET FOR USE LATER ####################################
+
+    # rows = {}
+    # for ticker in stock_tickers:
+    #     rows[ticker] = create_row(ticker)
+
+    # print("printing the ticker list with alphas: ")
+    # print(rows)
+
+
+    # dataframe = pd.DataFrame.from_dict(rows, orient='index', columns=['ticker', 'alpha_1', 'alpha_2', 'alpha_3', 'alpha_4', 'alpha_5', 'alpha_6', 'alpha_41', 'alpha_52', 'alpha_53', 'alpha_54', 'price_change'])
+    # dataframe.to_csv('data.csv', index=False)
+
+
+
+
     
 
-    print("COMPLETED MAIN task")
-    print("Row 1: ", row1)
-    print("Row 2: ", row2)
-    print("Row 3: ", row3)
-    print("Row 4: ", row4)
-    print("Row 5: ", row5)
+    # print("COMPLETED MAIN task")
+    # print("Row 1: ", row1)
+    # print("Row 2: ", row2)
+    # print("Row 3: ", row3)
+    # print("Row 4: ", row4)
+    # print("Row 5: ", row5)
     
 
-    df = pd.DataFrame([row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12, row13, row14, row15, row16, row17, row18, row19, row20, row21, row22, row23, row24, row25])
-    df.columns = ['ticker', 'alpha_1', 'alpha_2', 'alpha_3', 'alpha_4', 'alpha_5', 'alpha_6', 'alpha_41', 'alpha_52', 'alpha_53', 'alpha_54', 'price_change']
+    # df = pd.DataFrame([row1, row2, row3, row4, row5, row6, row7, row8, row9, row10, row11, row12, row13, row14, row15, row16, row17, row18, row19, row20, row21, row22, row23, row24, row25])
+    # df.columns = ['ticker', 'alpha_1', 'alpha_2', 'alpha_3', 'alpha_4', 'alpha_5', 'alpha_6', 'alpha_41', 'alpha_52', 'alpha_53', 'alpha_54', 'price_change']
+    
+    df = pd.read_csv('data.csv')
 
     print(df)
+    scaler = StandardScaler()
 
     x = df.iloc[:, 1:-1]
+    nan_columns = df.columns[df.isna().any()].tolist()
+    print(nan_columns)
+    print("Infinity values:", np.any(np.isinf(x)))
+    print("Max value:", np.max(x))
+    x[np.isinf(x)] = np.finfo(np.float64).max
+    x = scaler.fit_transform(x)
     print(x)
     y = df.iloc[:, -1]
+    # y = scaler.fit_transform(y.values.reshape(-1, 1))
     print(y)
 
     xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=42)
@@ -456,7 +833,7 @@ def main():
     print(f"R-squared (Linear Regression): {r2}")
 
 
-    forest = RandomForestRegressor(n_estimators=500, random_state=42) # The random forest is most accurate but leaves room for improvement
+    forest = RandomForestRegressor(n_estimators=400, random_state=42) # The random forest is most accurate but leaves room for improvement
 
     forest.fit(xTrain, yTrain)
  
@@ -471,6 +848,26 @@ def main():
     # print("GETTING DATA: ")
     # print(data)
 
+#### The neural network; could be the best bet.
+    model = Sequential([
+    Dense(64, activation='relu', input_shape=(xTrain.shape[1],)),
+    Dense(64, activation='relu'),
+    Dense(1)  # Output layer with 1 neuron for regression
+])
+    
+
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
+
+    model.fit(xTrain, yTrain, epochs=10, batch_size=32, validation_data=(xTest, yTest))
+
+    y_pred = model.predict(xTest)
+    print("Predicted Results: ")
+    print(y_pred)
+    print("Actual Results: ")
+    print(yTest)
+
+    loss, mae = model.evaluate(xTest, yTest)
+    print("Mean Absolute Error for NN:", mae)
 
 
 
