@@ -309,7 +309,7 @@ def alpha10(data):
 def create_row(ticker):
 
     end_date = datetime.now() - timedelta(days=365)
-    start_date = end_date - timedelta(days=365)
+    start_date = end_date - timedelta(days= (365/2))
 
     data = yf.download(ticker, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
     data = pd.DataFrame(data)
