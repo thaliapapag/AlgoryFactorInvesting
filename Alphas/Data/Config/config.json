@@ -1,0 +1,16 @@
+{
+  "weights": {
+    "alpha1": 1
+  },
+  "options": {
+    "day_range": 100,
+    "threshold_buy": 0.3,
+    "threshold_sell": 0.1,
+    "order_size": 10
+  },
+  "exogenous_opt": {
+    "_fmt": "PLACEHOLDER",
+    "start_date": "2022 8-10",
+    "end-date": "2024 10-12"
+  }
+}
