@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import json
 from data_download import get_spy_tkr_data
+from market_tester import run_timeline
 
 """
 To-Do:
