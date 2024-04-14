@@ -89,6 +89,7 @@ def dictdf_to_dict(df):
 def get_spy_data(
     start_date="2018-1-1",
     end_date="2023-11-1",
+    tickers: list = [],
     processes=10,
     seconds=10,
 ) -> dict:
@@ -98,11 +99,11 @@ def get_spy_data(
 
     print(f"You have {mp.cpu_count()} cores.")
 
-    tickers = get_spy_tickers()
+    tickers = get_spy_tickers()[:10] if not tickers else tickers
     ticker_list = []  # tickers to save to spy_tickers.txt
     # we can parse spy_tickers.txt to pick out the specific stocks we want to test on for alpha calculation
 
-    for ticker in tqdm(tickers[:10]):
+    for ticker in tqdm(tickers):
         stock_info = stockHistory(ticker, start=start_date, end=end_date, to_json=True)
 
         if stock_info.empty:
@@ -142,6 +143,24 @@ def get_spy_data(
 
     # for stock in results:
     #     stock_info[stock.name] = stock
+
+
+def get_spy_tkr_data(start_date, end_date, ticker):
+    try:
+        stock_info = stockHistory(ticker, start=start_date, end=end_date, to_json=True)
+
+        if stock_info.empty:
+            print(f"Ticker {ticker} encountered error. Cutting ticker from stock info.")
+            raise Exception("TKR ERROR: yfinance failed to find stock info.")
+
+        # dictdf_to_dict(stock_info)
+        save_path = f"Stock_History/{ticker}_info.json"
+
+        with open(os.path.join(root, save_path), "w") as f:
+            json.dump(stock_info, f, indent=4, cls=JSONEncoder)
+
+    except Exception as e:
+        print("ERROR OCCURED IN GET TKR DATA: ", e)
 
 
 def get_spy_tickers() -> list:

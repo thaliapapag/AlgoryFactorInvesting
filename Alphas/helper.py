@@ -59,12 +59,15 @@ def correlation_days(x, y, d):
     return corr[0][1]  # return value from correlation matrix
 
 
-def slice_database_by_dates(database, start_date, end_date):
+def slice_database_by_dates(database, start_date, end_date=None):
     # Does not have error handling. Must provide valid business days for both start_date and end_date
     if start_date not in database.index:
         raise ValueError(
             f"Could not find start date. {start_date}. Database index range: {database.index[0],database.index[-1]}"
         )
+
+    if not end_date:
+        return database.iloc[start_index:]
 
     if end_date not in database.index:
         raise ValueError(
