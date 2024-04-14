@@ -2,6 +2,8 @@ from sklearn.neural_network import MLPClassifier
 import pandas as pd
 import numpy as np
 
+def alphas_to_df()
+
 def neural_net(x, y):
     # x = x.to_frame()
     # y = y.to_frame()

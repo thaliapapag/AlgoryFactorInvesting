@@ -147,49 +147,6 @@ def scale(x, a=1):
     return scaled_x
 
 
-# Alpha#51:
-# TODO: THIS COMES BACK AS AN ARRAY- AVERAGE AND SUM?
-# (delay(close, 20) - delay(close, 10)) / 10) - calculating average daily price change over those ten days
-# ((delay(close, 10) - close) / 10) - calculating price change over more recent ten days
-# subtracts more recent from earlier
-# WAY TO MEASURE MOMENTUM OF SECURITY
-# POS VALUE MEANS SLOWING MOMENTUM NEG VALUE MEANS INCREASING MOMENTUM
-# ((delay(close, 20) - delay(close, 10)) / 10) - ((delay(close, 10) - close) / 10))
-def alpha51(data):
-    close = data["Close"]
-    if (
-        ((delay(close, 20) - delay(close, 10)) / 10) - ((delay(close, 10) - close) / 10)
-    ) < (-1 * 0.05):
-        alpha51 = 1
-    else:
-        alpha51 = (-1 * 1) * (close - delay(close, 1))
-    return alpha51
-
-
-# Alpha#52
-# identifies trading signals based on combo of price momentum, relative strength over medium to long term and recent trading activity
-# HIGH VALUES BUY, LOW VALUES SELL
-# ((((-1 * ts_min(low, 5)) + delay(ts_min(low, 5), 5)) * rank(((sum(returns, 240) - sum(returns, 20)) / 220))) * ts_rank(volume, 5))
-def alpha52(data):
-    low = data['Low']
-    returns = r(data)
-    volume = data['Volume']
-    alpha52 = (
-        ((-1 * ts_min(low, 5)) + delay(low, 5, ts_min(low, 5)))
-        * rank(((sum(returns, 240) - sum(returns, 20)) / 220))
-    ) * ts_rank(volume, 5)
-    alpha52 = alpha52.dropna()
-    alpha52.index = data.index
-    return alpha52
-
-
-# Alpha#53:
-# BUY if switches from neg to pos
-# SELL if swtiched from pos to neg
-# (-1 * delta((((close - low) - (high - close)) / (close - low)), 9))
-def alpha53(close, low, high):
-    alpha53 = -1 * delta((((close - low) - (high - close)) / (close - low)), 9)
-    return alpha53
 
 
 # Alpha#54: (idk if I like this one)
@@ -204,18 +161,6 @@ def alpha54(data):
     alpha54 = (-1 * ((low - close) * (open**5))) / ((low - high) * (close**5))
     return alpha54
 
-
-# Alpha#55:
-# BUY could be indicated by pos values
-# SELL could be indicated by neg values
-# (-1 * correlation(rank(((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))), rank(volume), 6))
-def alpha55(close, low, high, volume):
-    alpha55 = -1 * correlation(
-        rank(((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))),
-        rank(volume),
-        6,
-    )
-    return alpha55
 
 
 # WENDYS ALPHAS
@@ -285,103 +230,38 @@ def alpha6(data):
     alpha6 = -1 * correlation_open_volume
     return alpha6
 
+def vwap(data):
+    typical_price = (data["High"] + data["Low"] + data["Close"]) / 3
+    # Calculate the volume-weighted average price
+    vwap = (typical_price * data["Volume"]).sum() / data["Volume"]
+    return vwap
 
-# Alpha #7
-# ((adv20 < volume) ? ((-1 * ts_rank(abs(delta(close, 7)), 60)) * sign(delta(close, 7))) : (-1 * 1))
-def alpha7(data):
-    adv20 = data["Volume"].rolling(window=20).mean()
-    delta_close_7 = data["Close"].diff(7)
-    condition = adv20 < data["Volume"]
-
-    result = np.where(
-        condition,
-        -1
-        * data["Close"]
-        .diff(7)
-        .abs()
-        .rolling(window=60)
-        .apply(lambda x: x.rank().iloc[-1]),
-        -1,
-    )
-    alpha7 = np.where(condition, result * np.sign(delta_close_7), result)
-    return alpha7
-
-
-# Alpha #8
-# (-1 * rank(((sum(open, 5) * sum(returns, 5)) - delay((sum(open, 5) * sum(returns, 5)), 10))))
-def alpha8(data):
-    sum_open_5 = data["Open"].rolling(window=5).sum()
-    sum_returns_5 = data["Returns"].rolling(window=5).sum()
-    combined_sum = sum_open_5 * sum_returns_5
-    delayed_combined_sum = combined_sum.shift(10)
-    final_expression = combined_sum - delayed_combined_sum
-    alpha8 = -1 * final_expression.rank()
-    return alpha8
-
-
-# Alpha 9:
-# ((0 < ts_min(delta(close, 1), 5)) ? delta(close, 1) : ((ts_max(delta(close, 1), 5) < 0) ? delta(close, 1) : (-1 * delta(close, 1))))
-def alpha9(data):
-    delta_close = data["Close"].diff()
-    ts_min = delta_close.rolling(window=5).min()
-    ts_max = delta_close.rolling(window=5).max()
-    condition1 = ts_min > 0
-    condition2 = ts_max < 0
-    return np.where(
-        condition1, delta_close, np.where(condition2, delta_close, -delta_close)
-    )
-
-
-# Alpha 10:
-# rank(((0 < ts_min(delta(close, 1), 4)) ? delta(close, 1) : ((ts_max(delta(close, 1), 4) < 0) ? delta(close, 1) : (-1 * delta(close, 1)))))
-def alpha10(data):
-    delta_close = data["Close"].diff()
-    ts_min = delta_close.rolling(window=4).min()
-    ts_max = delta_close.rolling(window=4).max()
-    condition1 = ts_min > 0
-    condition2 = ts_max < 0
-    alpha = np.where(
-        condition1, delta_close, np.where(condition2, delta_close, -delta_close)
-    )
-    return alpha.rank()
+def alphas_to_df(data):
+    #TODO: add more alphas to this list
+    alpha1_df = alpha1(data)
+    alpha2_df = alpha2(data)
+    alpha3_df = alpha3(data)
+    alpha4_df = alpha4(data)
+    alpha5_df = alpha5(data)
+    alpha6_df = alpha6(data)
+    alpha54_df = alpha54(data)
+    
+    alphas_df = pd.concat([alpha1_df, alpha2_df, alpha3_df, alpha4_df, alpha5_df, alpha6_df, alpha54_df], axis=1)
+    alphas_df.columns = ['alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5', 'alpha6', 'alpha54']
+    alphas_df.fillna(method='ffill', inplace=True)
+    alphas_df.dropna(inplace=True)
+    return alphas_df
 
 
 def main():
     ticker = yf.Ticker("^GSPC")
     data = ticker.history(period="2mo")  # pricing data for the S&P 500
 
-    low = data["Low"]
-    volume = data[
-        "Volume"
-    ]  # THIS REFERS TO VOLUME NOT PRICE VOLUME- should it be changed????
-    returns = r(data)
-    close = data["Close"]
-    high = data["High"]
-    open = data["Open"]
-
-    typical_price = (data["High"] + data["Low"] + data["Close"]) / 3
-    # Calculate the volume-weighted average price
-    vwap = (typical_price * data["Volume"]).sum() / data["Volume"]
 
     keeping = ['alpha54', 'alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5', 'alpha6']
 
-    #print(alpha51(data))
-    #print(alpha52(data))
-    print("************************")
-    #print(alpha53(close, low, high))
-    #print(alpha54(low, close, open, high))
-    #print(alpha55(close, low, high, volume))
-
-    #print(alpha1(data))
-    #print(alpha2(data))
-    #print(alpha3(data))
-    #print(alpha4(data))
-    #print(alpha5(data))
-    #print(alpha6(data))
-    #print(alpha7(data))
-    #print(alpha8(data))
-    # print(alpha9(data)) #shouldn't return a numpy array should return a dataframe
-    # print(alpha10(data)) #shouldn't return a numpy array should return a dataframe
+    alphas_df = alphas_to_df(data)
+    print(alphas_to_df(data))
 
 
 if __name__ == "__main__":
