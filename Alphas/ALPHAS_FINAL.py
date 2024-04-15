@@ -7,6 +7,8 @@ import pandas as pd
 import json
 import os
 import time
+import normalize_alphas
+import csv_to_dataframe
 #import pandas_market_calendars as mcal
 #from tqdm import tqdm
 
@@ -238,6 +240,11 @@ def vwap(data):
 
 def alphas_to_df(data):
     #TODO: add more alphas to this list
+
+    #before calculating alphas we need to standardize and normalize the data
+    data = normalize_alphas.normalize_alphas(data)
+    data = normalize_alphas.standardize_alphas(data)
+
     alpha1_df = alpha1(data)
     alpha2_df = alpha2(data)
     alpha3_df = alpha3(data)
@@ -254,14 +261,14 @@ def alphas_to_df(data):
 
 
 def main():
-    ticker = yf.Ticker("^GSPC")
-    data = ticker.history(period="2mo")  # pricing data for the S&P 500
-
-
-    keeping = ['alpha54', 'alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5', 'alpha6']
+    #import the csv we want to use to calculate alphas 
+    data = csv_to_dataframe.csv_to_dataframe('SPY_data_2022_2024.csv')
 
     alphas_df = alphas_to_df(data)
     print(alphas_to_df(data))
+
+    #save the alphas to a csv file
+    alphas_df.to_csv('alphas_SPY_2022_2024.csv')
 
 
 if __name__ == "__main__":
