@@ -70,11 +70,11 @@ combine = (
 # order_type, symbol, quantity = order
 def convert_to_order(num, ticker):
     if num > THRESHOLD_BUY:
-        return [ticker, ORDER_SIZE, "BUY"]
+        return ["BUY", ticker, ORDER_SIZE]
     elif num < THRESHOLD_SELL:
-        return [ticker, ORDER_SIZE, "SELL"]
+        return ["SELL", ticker, ORDER_SIZE]
 
-    return [ticker, ORDER_SIZE, "HOLD"]
+    return ["HOLD", ticker, ORDER_SIZE]
 
 
 # Care for race-condition-like edge case. We do not control for way orders are arranged.
