@@ -17,20 +17,22 @@ def save_dataframe_to_csv(df, file_name):
     df.to_csv(file_name)
 
 #create y dataframe for neural network
-def create_y(data, alphas_df, days_ago=2):
-    earliest_date = alphas_df.index.min()
-    latest_date = alphas_df.index.max()
-    data_trimmed = data.loc[earliest_date:latest_date]
-    buy_date = data_trimmed['Close'].iloc[-1]
-    returns_df = pd.DataFrame({
-        'returns_x_days_ago': (data_trimmed['Close'] - data_trimmed['Close'].shift(days_ago)) / data_trimmed['Close'].shift(days_ago)
-    }, index=data_trimmed.index)
-    returns_df.fillna(method='ffill', inplace=True)
-    returns_df.fillna(0, inplace=True)
-    #should normalize and standardize the y column becuase right now it's just prices and we want it to fit other stocks 
-    returns_df = normalize_alphas.normalize_alphas(returns_df)
-    returns_df = normalize_alphas.standardize_alphas(returns_df)
-    return returns_df
+#holding period is going to be 8 weeks 
+#weekends account for 8 of those days and assuming 1 holiday day 
+#56 - 16 - 1 = 39 trading days
+def create_y(data, alphas_df):
+    closed_shifted = data['Close'].shift(-39) #shifted up 39 days to get the closing price 39 days from now
+    closed_shifted = closed_shifted[:-39]
+    closed = data['Close'][:-39] #making sure that both columns of data are the same length 
+    returns = closed_shifted / closed 
+    returns.index = closed.index 
+    min_date = returns.index.min()
+    max_date = returns.index.max()
+    data_trimmed = data.loc[min_date:max_date]
+    returns.fillna(method='ffill', inplace=True)
+    returns.fillna(0, inplace=True)
+
+    
 
 def main():
     file = 'SPY_data_2022_2024.csv'
