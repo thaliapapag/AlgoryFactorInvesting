@@ -26,11 +26,13 @@ def create_y(data, alphas_df):
     closed = data['Close'][:-39] #making sure that both columns of data are the same length 
     returns = closed_shifted / closed 
     returns.index = closed.index 
-    min_date = returns.index.min()
-    max_date = returns.index.max()
-    data_trimmed = data.loc[min_date:max_date]
+    # min_date = returns.index.min()
+    # max_date = returns.index.max()
+    # data_trimmed = data.loc[min_date:max_date]
     returns.fillna(method='ffill', inplace=True)
     returns.fillna(0, inplace=True)
+
+    return returns
 
     
 
@@ -40,7 +42,7 @@ def main():
 
     alphas_df = csv_to_dataframe('alphas_SPY_2022_2024.csv')
 
-    y = create_y(data, alphas_df, days_ago=7)
+    y = create_y(data, alphas_df)
     print(y)
     #save_dataframe_to_csv(y, 'y_SPY_2022_2024.csv')
     
