@@ -74,7 +74,7 @@ def alpha6(data):
     """
     Alpha#6: (-1 * correlation(open, volume, 10))
     """
-    correlation_open_volume = data['open'].rolling(window=10).corr(data['volume'])
+    correlation_open_volume = data['Open'].rolling(window=10).corr(data['Volume'])
 
     alpha6 = -1 * correlation_open_volume
     return alpha6
@@ -178,7 +178,7 @@ def main():
     data = yf.download(ticker, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
     # print(data)
 
-    print(alpha13(data))
+    print(alpha12(data))
 
 if __name__ == "__main__":
     main()
