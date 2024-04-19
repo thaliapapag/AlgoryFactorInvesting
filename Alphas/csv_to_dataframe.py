@@ -20,7 +20,7 @@ def save_dataframe_to_csv(df, file_name):
 #holding period is going to be 8 weeks 
 #weekends account for 8 of those days and assuming 1 holiday day 
 #56 - 16 - 1 = 39 trading days
-def create_y(data, alphas_df):
+def create_y(data):
     closed_shifted = data['Close'].shift(-39) #shifted up 39 days to get the closing price 39 days from now
     closed_shifted = closed_shifted[:-39]
     closed = data['Close'][:-39] #making sure that both columns of data are the same length 
