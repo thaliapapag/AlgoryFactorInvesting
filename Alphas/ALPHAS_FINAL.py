@@ -376,7 +376,7 @@ def main():
     print(alphas_to_df(data))
 
     # #save the alphas to a csv file
-    alphas_df.to_csv('alphas_SPY_2022_2024.csv')
+    #alphas_df.to_csv('alphas_SPY_2022_2024.csv')
 
     #print(alphaExt4(data))
 

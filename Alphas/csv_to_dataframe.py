@@ -1,6 +1,8 @@
 import pandas as pd
 import yfinance as yf
 import normalize_alphas
+import ALPHAS_FINAL
+from sklearn.model_selection import train_test_split
 
 
 def save_data(tickerSymbol, start_date, end_date, file_name):
@@ -49,15 +51,23 @@ def create_y(data, alphas_df=None):
     
 
 def main():
-    file = 'SPY_data_2022_2024.csv'
-    data = csv_to_dataframe(file)
+    tickers = ['AAPL', 'RL', 'TSLA', 'DIS', 'MSFT', 'NFLX']
+    for ticker in tickers:
+        save_data(ticker, '2014-01-01', '2024-01-01', f'{ticker}_data_2014_2024.csv')
 
-    alphas_df = csv_to_dataframe('alphas_SPY_2022_2024.csv')
+        file = f'{ticker}_data_2014_2024.csv'
+        data = csv_to_dataframe(file)
 
-    y, newalphas = create_y(data, alphas_df)
+        alphas = ALPHAS_FINAL.alphas_to_df(data)
+        #alphas_df = csv_to_dataframe('alphas_SPY_2022_2024.csv')
 
-    save_dataframe_to_csv(y, 'y_SPY_2022_2024.csv')
-    save_dataframe_to_csv(newalphas, 'newalphas_SPY_2022_2024.csv')
+        y, x = create_y(data, alphas)
+
+        save_dataframe_to_csv(y, f'y_{ticker}_data_2014_2024.csv')
+        save_dataframe_to_csv(x, f'alphas_{ticker}_data_2014_2024.csv')
+
+        # 20 testing- 80 training split for training and testing
+        xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=42)
     
 if __name__ == "__main__":
     main()
