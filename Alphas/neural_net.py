@@ -11,27 +11,27 @@ import seaborn as sns
 
 
 
-def neural_net(x, y):
-    clf = MLPClassifier(random_state=1, max_iter=300).fit(x, y)
-    y_pred = clf.predict(x)
-    accuracy = clf.score(x, y)
+def neural_net(xTrain, yTrain, xTest, yTest):
+    clf = MLPClassifier(random_state=1, max_iter=300).fit(xTrain, yTrain)
+    y_pred = clf.predict(xTest)
+    accuracy = clf.score(xTest, yTest)
     return y_pred, accuracy
 
-def decision_tree(x, y):
-    clf = DecisionTreeRegressor(random_state=1).fit(x, y)
-    y_pred = clf.predict(x)
-    accuracy = clf.score(x, y)
+def decision_tree(xTrain, yTrain, xTest, yTest):
+    clf = DecisionTreeRegressor(random_state=1).fit(xTrain, yTrain)
+    y_pred = clf.predict(xTest)
+    accuracy = clf.score(xTest, yTest)
     return y_pred, accuracy
 
-def linear_regression(x, y):
-    clf = LinearRegression().fit(x, y)
-    y_pred = clf.predict(x)
-    accuracy = clf.score(x, y)
-    return y_pred, accuracy
+def linear_regression(xTrain, yTrain, xTest, yTest):
+    clf = LinearRegression().fit(xTrain, yTrain)
+    y_pred = clf.predict(xTest)
+    accuracy = clf.score(xTest, yTest)
+    return y_pred, yTest, accuracy
 
 
 
-#grid search is currently not working 
+#grid search is currently not working
 def grid_search(xTrain, yTrain):
 
     clf = MLPClassifier(random_state=1)
@@ -52,33 +52,71 @@ def grid_search(xTrain, yTrain):
 
     return classifier, bestParams
 
-def correlation_matrix(x, y):
-    x['y'] = y
-    corr = x.corr()
-    x.drop('y', axis=1, inplace=True)
-    return corr
+# def correlation_matrix(x, y):
+#     x['y'] = y
+#     corr = x.corr()
+#     x.drop('y', axis=1, inplace=True)
+#     return corr
 
-def plot_correlation_matrix(x, y):
-    corr = correlation_matrix(x, y)
-    sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title('Correlation Matrix')
+
+def feature_output_correlation(x, y):
+    correlations = {}
+    lowest_correlation_column = ''
+    lowest_correlation = 1
+    highest_correlation_column = ''
+    highest_correlation = 0
+    for column in x.columns:
+        # Calculate the correlation between the feature column and the target variable
+        correlation = x[column].corr(y.iloc[:, 0])  # Assuming 'y' has a single target column
+        correlations[column] = correlation
+
+        if (correlation < lowest_correlation):
+            print("minimum")
+            lowest_correlation_column = column
+            lowest_correlation = correlation
+        if (correlation > highest_correlation):
+            highest_correlation_column = column
+            highest_correlation = correlation
+    
+    print(f"The lowest correlation with the output is {lowest_correlation_column} at {lowest_correlation}. The highest correlation with the output is {highest_correlation_column} at {highest_correlation}")
+    
+    return pd.Series(correlations)
+
+def correlation_matrix(correlations):
+    correlations = pd.DataFrame(correlations, columns=['Correlation'])
+    correlations.index.name = 'Feature'
+
+    correlations.reset_index(inplace=True)
+
+    print(correlations)
+
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(correlations.pivot(index='Feature', columns='Feature', values='Correlation'), cmap='coolwarm', annot=True)
+
+    plt.title('Feature-Output Correlation Heatmap')
     plt.show()
 
+
+# def plot_correlation_matrix(x, y):
+#     corr = correlation_matrix(x, y)
+#     sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
+#     plt.title('Correlation Matrix')
+#     plt.show()
+
 def main():
-    file = 'SPY_data_2022_2024.csv'
-    data = csv_to_dataframe.csv_to_dataframe(file)
+    # file = 'SPY_data_2022_2024.csv'
+    # data = csv_to_dataframe.csv_to_dataframe(file)
 
-    alphas_df = csv_to_dataframe.csv_to_dataframe('alphas_SPY_2022_2024.csv')
+    alphas_df = csv_to_dataframe.csv_to_dataframe('/Users/peterloiselle/AlgoryFactorInvesting/newalphas_SPY_2022_2024.csv') 
 
-    y = csv_to_dataframe.create_y(data, alphas_df, days_ago=7)
+    y = csv_to_dataframe.csv_to_dataframe('/Users/peterloiselle/AlgoryFactorInvesting/y_SPY_2022_2024.csv')
 
     #y = y['returns_x_days_ago'].values.flatten()
 
-    x = alphas_df
+    alpha_output_correlations = feature_output_correlation(alphas_df, y)
+    # print(alpha_output_correlations)
 
-    corr = correlation_matrix(x, y)
-    print('***** correlation *******')
-    print(corr)
+    # correlation_matrix(alpha_output_correlations)
 
     # y_pred, accuracy = neural_net(x, y)
     
@@ -93,6 +131,12 @@ def main():
     # print(best_params)
     # print("BEST**************")
     # print(best)
+
+    xTrain, xTest, yTrain, yTest = train_test_split(alphas_df, y, test_size=0.3, random_state=42)
+    #### where the models are done ######
+    # print(linear_regression(xTrain, yTrain, xTest, yTest))
+    # print(neural_net(xTrain, yTrain, xTest, yTest))
+    # print(decision_tree(xTrain, yTrain, xTest, yTest))
 
 
 if __name__ == "__main__":
