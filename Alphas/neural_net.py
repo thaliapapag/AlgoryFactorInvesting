@@ -3,6 +3,12 @@ import pandas as pd
 import numpy as np
 import csv_to_dataframe
 from sklearn.model_selection import GridSearchCV
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 
 def neural_net(x, y):
@@ -11,7 +17,21 @@ def neural_net(x, y):
     accuracy = clf.score(x, y)
     return y_pred, accuracy
 
+def decision_tree(x, y):
+    clf = DecisionTreeRegressor(random_state=1).fit(x, y)
+    y_pred = clf.predict(x)
+    accuracy = clf.score(x, y)
+    return y_pred, accuracy
 
+def linear_regression(x, y):
+    clf = LinearRegression().fit(x, y)
+    y_pred = clf.predict(x)
+    accuracy = clf.score(x, y)
+    return y_pred, accuracy
+
+
+
+#grid search is currently not working 
 def grid_search(xTrain, yTrain):
 
     clf = MLPClassifier(random_state=1)
@@ -32,10 +52,17 @@ def grid_search(xTrain, yTrain):
 
     return classifier, bestParams
 
-#correlation matrix between the x columns and the y column
 def correlation_matrix(x, y):
-    x = x.corr(y)
-    return x
+    x['y'] = y
+    corr = x.corr()
+    x.drop('y', axis=1, inplace=True)
+    return corr
+
+def plot_correlation_matrix(x, y):
+    corr = correlation_matrix(x, y)
+    sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
+    plt.title('Correlation Matrix')
+    plt.show()
 
 def main():
     file = 'SPY_data_2022_2024.csv'
