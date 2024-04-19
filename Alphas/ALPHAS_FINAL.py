@@ -305,6 +305,30 @@ def alphaExt4(data):
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
 
+def alphaExt5(data):
+    start_data = data.index[0]
+    end_data = data.index[-1]
+    #S&P 500 Index
+    tech_data = yf.Ticker('SPY').history(start=start_data, end=end_data)
+    tech = csv_to_dataframe.create_y(tech_data)
+    return tech
+
+def alphaExt6(data):
+    start_data = data.index[0]
+    end_data = data.index[-1]
+    #Dow Jones Industrial Average
+    tech_data = yf.Ticker('DIA').history(start=start_data, end=end_data)
+    tech = csv_to_dataframe.create_y(tech_data)
+    return tech
+
+def alphaExt7(data):
+    start_data = data.index[0]
+    end_data = data.index[-1]
+    #energy select sector SPDR fund
+    tech_data = yf.Ticker('XLE').history(start=start_data, end=end_data)
+    tech = csv_to_dataframe.create_y(tech_data)
+    return tech
+
 def vwap(data):
     typical_price = (data["High"] + data["Low"] + data["Close"]) / 3
     # Calculate the volume-weighted average price
@@ -332,10 +356,13 @@ def alphas_to_df(data):
     alphaExt2_df = alphaExt2(data)
     alphaExt3_df = alphaExt3(data)
     alphaExt4_df = alphaExt4(data)
+    alphaExt5_df = alphaExt5(data)
+    alphaExt6_df = alphaExt6(data)
+    alphaExt7_df = alphaExt7(data)
     alpha54_df = alpha54(data)
     
-    alphas_df = pd.concat([alpha1_df, alpha2_df, alpha3_df, alpha4_df, alpha5_df, alpha6_df, alpha12_df, alpha13_df, alpha14_df, alpha15_df, alpha54_df, alphaExt1_df, alphaExt2_df, alphaExt3_df, alphaExt4_df], axis=1)
-    alphas_df.columns = ['alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5', 'alpha6', 'alpha12', 'alpha13', 'alpha14', 'alpha15', 'alpha54', 'alphaExt1', 'alphaExt2', 'alphaExt3', 'alphaExt4']
+    alphas_df = pd.concat([alpha1_df, alpha2_df, alpha3_df, alpha4_df, alpha5_df, alpha6_df, alpha12_df, alpha13_df, alpha14_df, alpha15_df, alpha54_df, alphaExt1_df, alphaExt2_df, alphaExt3_df, alphaExt4_df, alphaExt5_df, alphaExt6_df, alphaExt7_df], axis=1)
+    alphas_df.columns = ['alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5', 'alpha6', 'alpha12', 'alpha13', 'alpha14', 'alpha15', 'alpha54', 'alphaExt1', 'alphaExt2', 'alphaExt3', 'alphaExt4', 'alphaExt5', 'alphaExt6', 'alphaExt7']
     alphas_df.fillna(method='ffill', inplace=True)
     alphas_df.dropna(inplace=True)
     return alphas_df
