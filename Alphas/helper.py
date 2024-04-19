@@ -129,6 +129,10 @@ def generate_random_instructions(n: int = 1000) -> list:
 
     return res
 
+def func_string(func,*args):
+    
+    pass
+
 
 if __name__ == "__main__":
     a = generate_random_instructions(100)

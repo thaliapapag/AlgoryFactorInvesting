@@ -10,16 +10,8 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from helper import (
-    series_index_to_dates,
-    process_pair,
-    check_hold,
-    add_to_daytracker,
-    remove_from_daytracker,
-    get_market_valid_times,
     slice_database_by_dates,
     get_market_end_date,
-    remove_stop_loss_from_daytracker,
-    check_stop_loss,
 )
 from multiprocessing import Pool
 import numpy as np
@@ -28,10 +20,6 @@ from collections import defaultdict
 from data_download import get_spy_data, get_spy_index_data
 
 # from helper import get_market_start_date
-
-if not os.path.exists(os.path.join("Data", "spy.csv")):
-    raise ("ERROR")
-    # get_spy_data()
 
 settings = strategy.get_settings()
 
@@ -129,7 +117,7 @@ def buy_stock(symbol, quantity, price, timestamp: str):  # 2018-06-20
         else:
             positions[symbol] = {"quantity": quantity, "avg_price": price}
 
-        daytracker = add_to_daytracker(daytracker, quantity, symbol, day_number, price)
+        # daytracker = add_to_daytracker(daytracker, quantity, symbol, day_number, price)
 
         current_capital -= total_cost
     else:
