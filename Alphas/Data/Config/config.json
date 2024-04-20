@@ -4,18 +4,19 @@
   },
   "options": {
     "day_range": 100,
-    "threshold_buy": 0.3,
-    "threshold_sell": 0.1,
+    "threshold_buy": 4,
+    "threshold_sell": 3,
     "order_size": 10
   },
   "exogenous_opt": {
-    "_fmt": "PLACEHOLDER",
+    "_fmt": "%Y-%m-%d",
     "start_date": "2022 8-10",
     "end-date": "2024 10-12",
-    "INITIAL_CAPITAL": 100000
+    "initial_capital": 100000
   },
   "broker_opt": {
     "C_FLAT": 20,
-    "C_PERCENT": 0.1
+    "C_PERCENT": 0.1,
+    "C_TYPE": "NONE"
   }
 }

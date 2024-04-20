@@ -18,10 +18,12 @@ import numpy as np
 from tqdm import tqdm
 from collections import defaultdict
 from data_download import get_spy_data, get_spy_index_data
+from config import cfg
 
 # from helper import get_market_start_date
 
-settings = strategy.get_settings()
+settings = cfg.broker_opt
+root = "Alphas"
 
 # Linear list of trades made
 trades_made = []
@@ -32,14 +34,15 @@ positions = {}
 # Tracks days held, updates based on sales, and auto sells at certain date
 daytracker = defaultdict(list)
 
-current_capital = settings["INITIAL_CAPITAL"]
+current_capital = cfg.INITIAL_CAPITAL
 
 day_number = 0
 
 orders_index = []
 orders = pd.DataFrame()
-database = pd.DataFrame()
-database_index = []
+
+database = pd.read_csv(os.path.join(root, "Data/spy.csv"), index_col="Date")
+database.index = database.index.map(lambda x: x.split(" ")[0])
 
 portfolio_history = pd.Series()
 
@@ -162,39 +165,28 @@ def sell_stock(symbol, quantity, price, timestamp):
 
 def run_daily_instructions(current_day: str, instructions=list[list]):
     # print(instructions, type(instructions))
-    # Name: 2018-06-20, dtype: object [list([None, 'ADI', 10]) list([None, 'AJG', 10])] <class 'numpy.ndarray'> Index(['A ADI', 'A AJG'], dtype='object') <class 'str'> A AJG
-
-    # [list([None, 'ADI', 10]) list([None, 'AJG', 10])] <class 'numpy.ndarray'>
     # TODO: Add concurrency
-    for instruction in instructions:
-        for order in instruction:
-            order_type, symbol, quantity = order
+    for order in instructions:
+        order_type, symbol, quantity = order
 
-            print("CURRENT DATE", current_day, type(current_day))
+        price = float(database.loc[current_day][symbol])
 
-            # current_date_str = current_day.strftime("%Y-%m-%d %H:%M:%S")
-            print(instructions)
-            print(database.loc[current_day][symbol])
-            price = float(database.loc[current_day][symbol])
+        if order_type == "BUY":
+            buy_stock(symbol, quantity, price, current_day)
+        elif order_type == "SELL":
+            sell_stock(symbol, quantity, price, current_day)
+        else:
+            print(f"Invalid order{order}")
+            return
 
-            if order_type == "BUY":
-                buy_stock(symbol, quantity, price, current_day)
-            elif order_type == "SELL":
-                sell_stock(symbol, quantity, price, current_day)
-            else:
-                print(f"Invalid order{order}")
-                return
-
-            print(order_type, symbol, current_day, price)
-
-            print(f"{order_type: <4} {symbol: <4} on {current_day}: {float(price):.2f}")
+        # print(f"{order_type: <4} {symbol: <4} on {current_day}: {float(price):.2f}")
 
 
 def run_timeline(orders: pd.DataFrame, start_date: str, end_date: str):
     """
     Runs all instructions from a dataframe
     """
-    format = "%Y-%m-%d"
+    format = cfg.fmt
     start_date = datetime.datetime.strptime(start_date, format)
     end_date = datetime.datetime.strptime(end_date, format)
     to_sell = []
@@ -213,26 +205,12 @@ def run_timeline(orders: pd.DataFrame, start_date: str, end_date: str):
         day_number += 1
         data_rows = orders.loc[current_date]
         instructions = data_rows
-        """print(
-            instructions,
-            instructions.values,
-            type(instructions.values),
-            instructions.index,
-            type(instructions.index[0]),
-            instructions.index[-1],
-        )"""
 
-        # print("VAlues: ", instructions.values.tolist(), to_sell)
         run_daily_instructions(current_date, instructions.values.tolist())
 
         # update daytracker. Will move into function if this works
 
         portfolio_history = save_portfolio_value(portfolio_history, current_date)
-        # print(current_date)
-        """except Exception as e:
-            print(f"No data available for {current_date}, Error: {e}")
-            print(current_date, current_date, orders.loc[current_date])
-            input()"""
 
     return None
 
@@ -242,11 +220,13 @@ def plot_all(series: pd.Series, start_date, end_date):
     spy_data = get_spy_index_data(
         start_date=start_date, end_date=get_market_end_date(end_date=end_date)
     )
+    print(spy_data.index)
+    print(orders.index)
     spy_data_normalized = spy_data.apply(lambda x: (x / (spy_data.iloc[0]) - 1) * 100)
     series_data_normalized = series.apply(lambda x: (x / (series.iloc[0]) - 1) * 100)
     # series_normalized = series.apply(lambda x: x.div(x.iloc[0].subtract(1).mul(100)))
 
-    ax1.plot(database.index, spy_data_normalized.values, label="SPY")
+    ax1.plot(spy_data.index, spy_data_normalized.values, label="SPY")
 
     # df.index = df.index.map(lambda time: time.strftime("%Y-%m-%d"))
     # create df by calling portfolio_value() every day
@@ -271,7 +251,9 @@ def plot_all(series: pd.Series, start_date, end_date):
     ax1.legend()
     fig.tight_layout()
 
-    fig.savefig(os.path.join("StatArb", "Backtests", f"{start_date}_{end_date}.png"))
+    fig.savefig(
+        os.path.join(root, "Data/Backtests/Images", f"{start_date}_{end_date}.png")
+    )
 
     fig.show()
     print(
@@ -283,6 +265,12 @@ def save_portfolio_value(series: pd.Series, current_date: str, latest=False):
     # global portfolio_history
     series.at[len(series)] = portfolio_value(latest, current_date)
     return series
+
+
+def print_results():
+    print(f"Current Capital: {float(current_capital):.2f}")
+    print(f"Current Portfolio Value: {float(portfolio_value()):.2f}")
+    print("Positions:", positions)
 
 
 # does not account for stock splits
