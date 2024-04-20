@@ -215,52 +215,6 @@ def run_timeline(orders: pd.DataFrame, start_date: str, end_date: str):
     return None
 
 
-def plot_all(series: pd.Series, start_date, end_date):
-    fig, ax1 = plt.subplots()
-    spy_data = get_spy_index_data(
-        start_date=start_date, end_date=get_market_end_date(end_date=end_date)
-    )
-    print(spy_data.index)
-    print(orders.index)
-    spy_data_normalized = spy_data.apply(lambda x: (x / (spy_data.iloc[0]) - 1) * 100)
-    series_data_normalized = series.apply(lambda x: (x / (series.iloc[0]) - 1) * 100)
-    # series_normalized = series.apply(lambda x: x.div(x.iloc[0].subtract(1).mul(100)))
-
-    ax1.plot(spy_data.index, spy_data_normalized.values, label="SPY")
-
-    # df.index = df.index.map(lambda time: time.strftime("%Y-%m-%d"))
-    # create df by calling portfolio_value() every day
-    ax1.set_xlabel("Time")
-    ax1.set_ylabel("Percentage Returns")
-    ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
-    ax1.set_title(f"Factor Investing: {start_date} - {end_date}")
-    # ax2 = ax1.twinx()
-    ax1.plot(
-        database.index[-len(series_data_normalized) :],
-        series_data_normalized.values,
-        label="Factor Investing",
-    )
-    # ax2.set_ylabel("Percentage Returns")
-    # ax2.yaxis.set_major_formatter(mtick.PercentFormatter())
-
-    every_nth = 200
-    for n, label in enumerate(ax1.xaxis.get_ticklabels()):
-        if n % every_nth != 0:
-            label.set_visible(False)
-
-    ax1.legend()
-    fig.tight_layout()
-
-    fig.savefig(
-        os.path.join(root, "Data/Backtests/Images", f"{start_date}_{end_date}.png")
-    )
-
-    fig.show()
-    print(
-        f"Spy: {spy_data.values[-1]}, {spy_data_normalized.values[-1]}%\Factor Investing Model: {series.values[-1]},  {series_data_normalized.values[-1]}"
-    )
-
-
 def save_portfolio_value(series: pd.Series, current_date: str, latest=False):
     # global portfolio_history
     series.at[len(series)] = portfolio_value(latest, current_date)
