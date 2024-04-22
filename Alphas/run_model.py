@@ -22,7 +22,6 @@ def plot_all(data: pd.Series = portfolio_history, *args: List[Union[pd.Series, s
     """
     try:
         portfolio_history.name = "Factor Investing"
-        print(portfolio_history.index, portfolio_history)
         fig, ax = plt.subplots()
         data = normalize_data(data).to_frame()
         for series, label in args:
@@ -86,14 +85,10 @@ if __name__ == "__main__":
     start_date = orders.index[0]
     end_date = orders.index[-1]
 
-    # print(orders, len(orders), orders.values.tolist(), len(orders.values.tolist()))
-    print(orders.index)
     run_timeline(orders, start_date, end_date)
     print_results()
 
     spy_data = pd.read_csv(os.path.join(root, "Data/spy_index.csv")).set_index("Date")
-    print(type(spy_data))
-    print(spy_data)
 
     portfolio_history.index = orders.index
     plot_all(portfolio_history, [spy_data, "SPY"])
