@@ -265,5 +265,3 @@ if __name__ == "__main__":
     time_diff = time.time() - start_time
 
     print(f"Done. Took {time_diff:.2f} seconds.")
-
-    plot_all(portfolio_history, start_date, end_date)
