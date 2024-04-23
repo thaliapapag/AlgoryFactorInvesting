@@ -6,7 +6,7 @@
     "day_range": 100,
     "threshold_buy": 4,
     "threshold_sell": 3,
-    "order_size": 10
+    "order_size": 800
   },
   "exogenous_opt": {
     "_fmt": "%Y-%m-%d",
