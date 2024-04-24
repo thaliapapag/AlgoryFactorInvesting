@@ -4,6 +4,8 @@ from tqdm import tqdm
 import pandas as pd
 import time
 import json
+import datetime
+from config import cfg
 from data_download import get_spy_tkr_data
 import ALPHAS_FINAL as alphas
 
@@ -11,34 +13,14 @@ import ALPHAS_FINAL as alphas
 To-Do:
 Slice-dates (generate orders in range of specific dates, preferably by dates->index)
     - Cast dates to indices
-Sync with alpha functions (alpha parameters need to be standardized for this to work cleanly)
-
 """
 
 print(f"Working directory: {os.getcwd()}")
 
 root = "Alphas"
 
+# See config.py and config.json for CONFIG SETTINGS
 
-class Config:
-    def __init__(self, path="Data/Config", rt=True):
-        self.config_root = os.path.join(root, path) if rt else path
-        with open(os.path.join(self.config_root, "config.json")) as f:
-            self.cfg = json.loads(f.read())
-            self.weights = self.cfg["weights"]
-            self.opt = self.cfg["options"]
-            self.orders = None
-
-    def setOrders(self, orders):
-        self.orders = orders
-
-
-### CONFIG ###
-
-# Modify Config/config.json to update parameters for Grid Search
-cfg = Config()
-
-### CONFIG ###
 THRESHOLD_BUY = cfg.opt["threshold_buy"]
 THRESHOLD_SELL = cfg.opt["threshold_sell"]
 ORDER_SIZE = cfg.opt["order_size"]  # can also do floor div of $ amt by Price/Share
@@ -49,7 +31,7 @@ tickers = np.loadtxt(os.path.join(root, "Data/spy_tickers.txt"), dtype="str")
 stock_data = []
 weights = cfg.weights  # key,value : alpha (function name),weight. Ex: alpha1 : 0.58
 day_range = cfg.opt["day_range"]  # tmp spaghetti
-orders = [[] for _ in range(day_range)]
+orders = pd.DataFrame()
 
 start_time = time.time()
 
@@ -85,6 +67,16 @@ def convert_to_order(num, ticker):
     return ["HOLD", ticker, ORDER_SIZE]
 
 
+def unix_to_datetime(ts: int, strf_fmt=cfg.fmt):
+    """
+    Takes unix timestep (which we have in json) and converts it into datetime object.
+    @ts: unix timestamp, represented in miliseconds
+    """
+    date_time = datetime.datetime.fromtimestamp(int(ts) / 1000)
+
+    return date_time.strftime(strf_fmt)
+
+
 # Care for race-condition-like edge case. We do not control for way orders are arranged.
 
 # Generate orders
@@ -97,15 +89,16 @@ for ticker, data in tqdm(zip(tickers, stock_data)):
 
     calc.dropna(inplace=True, axis=0)
 
-    res = calc.agg("sum", axis="columns")
-    print(res)
+    res = calc.agg("sum", axis="columns").apply(lambda x: convert_to_order(x, ticker))
+    res.name = ticker
 
-    for idx, date_idx, date_output in enumerate(zip(res.index, res)):
-        if idx >= len(orders):
-            orders.append([])
-        orders[idx].append(convert_to_order(date_output, ticker))
+    orders = orders.join(res, how="outer")
+
+orders.dropna(inplace=True, axis=0)
+orders.index = orders.index.map(lambda x: unix_to_datetime(x))
 
 cfg.setOrders(orders)
 
+print(orders)
 print(f"Done. Took {time.time()-start_time:.2f} seconds.")
 # https://python-course.eu/numerical-programming/linear-combinations-in-python.php
