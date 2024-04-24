@@ -3,6 +3,8 @@ import yfinance as yf
 import normalize_alphas
 import ALPHAS_FINAL
 from sklearn.model_selection import train_test_split
+import numpy as np
+import neural_net
 
 
 def save_data(tickerSymbol, start_date, end_date, file_name):
@@ -48,26 +50,27 @@ def create_y(data, alphas_df=None):
     else: 
         return returns
 
-    
+
+def make_weights(ticker):
+    file = f'{ticker}_data_2014_2024.csv'
+    data = csv_to_dataframe(file)
+    alphas = ALPHAS_FINAL.alphas_to_df(data)
+    y, x = create_y(data, alphas)
+    xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=42)
+    y_pred, accuracy, weights, error = neural_net.linear_regression(xTrain, yTrain, xTest, yTest)
+    alpha_columns = x.columns
+    dict = {}
+    for i in range(len(alpha_columns)):
+        dict[alpha_columns[i]] = weights[i]
+    return dict
 
 def main():
     tickers = ['AAPL', 'RL', 'TSLA', 'DIS', 'MSFT', 'NFLX']
     for ticker in tickers:
-        save_data(ticker, '2014-01-01', '2024-01-01', f'{ticker}_data_2014_2024.csv')
+        weight = make_weights(ticker)
+        print(weight)
 
-        file = f'{ticker}_data_2014_2024.csv'
-        data = csv_to_dataframe(file)
 
-        alphas = ALPHAS_FINAL.alphas_to_df(data)
-        #alphas_df = csv_to_dataframe('alphas_SPY_2022_2024.csv')
-
-        y, x = create_y(data, alphas)
-
-        save_dataframe_to_csv(y, f'y_{ticker}_data_2014_2024.csv')
-        save_dataframe_to_csv(x, f'alphas_{ticker}_data_2014_2024.csv')
-
-        # 20 testing- 80 training split for training and testing
-        xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=42)
     
 if __name__ == "__main__":
     main()

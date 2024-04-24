@@ -33,7 +33,9 @@ def linear_regression(xTrain, yTrain, xTest, yTest):
     clf = LinearRegression().fit(xTrain, yTrain)
     y_pred = clf.predict(xTest)
     accuracy = clf.score(xTest, yTest)
-    return y_pred, yTest, accuracy
+    weights = clf.coef_
+    error = clf.intercept_
+    return y_pred, accuracy, weights, error
 
 
 
