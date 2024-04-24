@@ -51,9 +51,9 @@ def create_y(data, alphas_df=None):
         return returns
 
 
-def make_weights(ticker):
-    file = f'{ticker}_data_2014_2024.csv'
-    data = csv_to_dataframe(file)
+def make_weights(ticker, start_date='2014-01-01', end_date='2024-01-01'):
+    tickerData = yf.Ticker(ticker)
+    data = tickerData.history(period='1d', start=start_date, end=end_date)
     alphas = ALPHAS_FINAL.alphas_to_df(data)
     y, x = create_y(data, alphas)
     xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=42)
