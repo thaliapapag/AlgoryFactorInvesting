@@ -92,10 +92,7 @@ def get_spy_data(
     tickers: list = [],
     processes=10,
     seconds=10,
-) -> dict:
-    """
-    Elaborate collection of data, returned as a dictionary of pandas DataFrames
-    """
+):
 
     print(f"You have {mp.cpu_count()} cores.")
 

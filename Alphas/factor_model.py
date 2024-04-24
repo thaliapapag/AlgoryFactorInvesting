@@ -101,4 +101,6 @@ cfg.setOrders(orders)
 
 print(orders)
 print(f"Done. Took {time.time()-start_time:.2f} seconds.")
+
+
 # https://python-course.eu/numerical-programming/linear-combinations-in-python.php

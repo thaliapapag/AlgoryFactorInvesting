@@ -21,5 +21,13 @@ class Config:
     def setOrders(self, orders: pd.DataFrame):
         self.orders = orders.dropna(inplace=False, axis=0)
 
+    def setWeights(self, weights: dict):
+        self.weights = weights
+        self.cfg["weights"] = weights
+
+    def dumpJSON(self):
+        with open("result.json", "w") as fp:
+            json.dump(self.cfg, fp)
+
 
 cfg = Config()
