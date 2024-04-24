@@ -1,4 +1,5 @@
 from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import Perceptron
 import pandas as pd
 import numpy as np
 import csv_to_dataframe
@@ -9,7 +10,12 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
+def perceptron(xTrain, yTrain, xTest, yTest):
+    clf = Perceptron().fit(xTrain, yTrain)
+    y_pred = clf.predict(xTest)
+    accuracy = clf.score(xTest, yTest)
+    weights = clf.coef_
+    return y_pred, accuracy, weights
 
 def neural_net(xTrain, yTrain, xTest, yTest):
     clf = MLPClassifier(random_state=1, max_iter=300).fit(xTrain, yTrain)
@@ -104,39 +110,45 @@ def correlation_matrix(correlations):
 #     plt.show()
 
 def main():
-    # file = 'SPY_data_2022_2024.csv'
-    # data = csv_to_dataframe.csv_to_dataframe(file)
+    # # file = 'SPY_data_2022_2024.csv'
+    # # data = csv_to_dataframe.csv_to_dataframe(file)
 
-    alphas_df = csv_to_dataframe.csv_to_dataframe('/Users/peterloiselle/AlgoryFactorInvesting/newalphas_SPY_2022_2024.csv') 
+    # alphas_df = csv_to_dataframe.csv_to_dataframe('/Users/peterloiselle/AlgoryFactorInvesting/newalphas_SPY_2022_2024.csv') 
 
-    y = csv_to_dataframe.csv_to_dataframe('/Users/peterloiselle/AlgoryFactorInvesting/y_SPY_2022_2024.csv')
+    # y = csv_to_dataframe.csv_to_dataframe('/Users/peterloiselle/AlgoryFactorInvesting/y_SPY_2022_2024.csv')
 
-    #y = y['returns_x_days_ago'].values.flatten()
+    # #y = y['returns_x_days_ago'].values.flatten()
 
-    alpha_output_correlations = feature_output_correlation(alphas_df, y)
-    # print(alpha_output_correlations)
+    # alpha_output_correlations = feature_output_correlation(alphas_df, y)
+    # # print(alpha_output_correlations)
 
-    # correlation_matrix(alpha_output_correlations)
+    # # correlation_matrix(alpha_output_correlations)
 
-    # y_pred, accuracy = neural_net(x, y)
+    # # y_pred, accuracy = neural_net(x, y)
     
-    # print('***** y *******')
-    # print(y_pred)
-    # print('***** accuracy *******')
-    # print(accuracy)
+    # # print('***** y *******')
+    # # print(y_pred)
+    # # print('***** accuracy *******')
+    # # print(accuracy)
 
-    # best, best_params = grid_search(x, y)
+    # # best, best_params = grid_search(x, y)
 
-    # print("****************")
-    # print(best_params)
-    # print("BEST**************")
-    # print(best)
+    # # print("****************")
+    # # print(best_params)
+    # # print("BEST**************")
+    # # print(best)
+    alphas_df = pd.read_csv('newalphas_SPY_2022_2024.csv')
+    y = pd.read_csv('y_SPY_2022_2024.csv')
+    xTrain, xTest, yTrain, yTest = train_test_split(alphas_df, y['Close'], test_size=0.3, random_state=42)
+    # #### where the models are done ######
+    # # print(linear_regression(xTrain, yTrain, xTest, yTest))
+    # # print(neural_net(xTrain, yTrain, xTest, yTest))
+    # # print(decision_tree(xTrain, yTrain, xTest, yTest))
+    y_pred, accuracy, weights = perceptron(xTrain, yTrain, xTest, yTest)
+    print(y_pred)
+    print(accuracy)
+    print(weights)
 
-    xTrain, xTest, yTrain, yTest = train_test_split(alphas_df, y, test_size=0.3, random_state=42)
-    #### where the models are done ######
-    # print(linear_regression(xTrain, yTrain, xTest, yTest))
-    # print(neural_net(xTrain, yTrain, xTest, yTest))
-    # print(decision_tree(xTrain, yTrain, xTest, yTest))
 
 
 if __name__ == "__main__":
