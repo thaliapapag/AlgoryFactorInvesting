@@ -65,7 +65,7 @@ def make_weights(ticker, start_date='2014-01-01', end_date='2024-01-01'):
     return dict
 
 def main():
-    tickers = ['AAPL', 'RL', 'TSLA', 'DIS', 'MSFT', 'NFLX']
+    tickers = ['AAPL', 'RL', 'TSLA', 'DIS', 'MSFT', 'NFLX', 'AMZN', 'GOOGL']
     for ticker in tickers:
         tickerData = yf.Ticker(ticker)
         data = tickerData.history(period='1d', start='2014-01-01', end='2024-01-01')
@@ -73,6 +73,8 @@ def main():
         y, x = create_y(data, alphas)
         print(x)
         print(y)
+        save_dataframe_to_csv(x, f'{ticker}_x.csv')
+        save_dataframe_to_csv(y, f'{ticker}_y.csv')
 
 
     
