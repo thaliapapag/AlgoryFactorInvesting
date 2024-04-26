@@ -30,13 +30,18 @@ def plot_all(data: pd.Series = portfolio_history, *args: List[Union[pd.Series, s
                     raise InvalidPlotArgument
                 series = series.iloc[:, 0]
             normalized_series = normalize_data(series)
-            normalized_series.name = label
+            print("NORM SERIES:\n", normalized_series)
+            series.name = label
             data = data.merge(
-                normalized_series.to_frame(),
+                series,
                 how="left",
                 left_index=True,
                 right_index=True,
             )
+
+            data[label] = normalize_data(data[label])
+
+        print("\n\nDATA: \n", data)
 
         ax.set_xlabel("Time")
         ax.set_ylabel("Percentage Returns")
