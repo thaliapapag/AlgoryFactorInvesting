@@ -71,8 +71,10 @@ def main():
         data = tickerData.history(period='1d', start='2014-01-01', end='2024-01-01')
         alphas = ALPHAS_FINAL.alphas_to_df(data)
         y, x = create_y(data, alphas)
-        print(x)
+        x.index = x.index.strftime('%Y-%m-%d')
+        y.index = y.index.strftime('%Y-%m-%d')
         print(y)
+        print(x)
         save_dataframe_to_csv(x, f'{ticker}_x.csv')
         save_dataframe_to_csv(y, f'{ticker}_y.csv')
 
