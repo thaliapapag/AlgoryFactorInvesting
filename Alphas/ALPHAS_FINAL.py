@@ -9,8 +9,9 @@ import os
 import time
 import normalize_alphas
 import csv_to_dataframe
-#import pandas_market_calendars as mcal
-#from tqdm import tqdm
+
+# import pandas_market_calendars as mcal
+# from tqdm import tqdm
 
 # methods - Thalia
 
@@ -149,20 +150,17 @@ def scale(x, a=1):
     return scaled_x
 
 
-
-
 # Alpha#54: (idk if I like this one)
 # BUY could be indicated by pos values
 # SELL could be indicated by neg values
 # ((-1 * ((low - close) * (open^5))) / ((low - high) * (close^5)))
 def alpha54(data):
-    low = data['Low']
-    close = data['Close']
-    open = data['Open']
-    high = data['High']
+    low = data["Low"]
+    close = data["Close"]
+    open = data["Open"]
+    high = data["High"]
     alpha54 = (-1 * ((low - close) * (open**5))) / ((low - high) * (close**5))
     return alpha54
-
 
 
 # WENDYS ALPHAS
@@ -232,16 +230,18 @@ def alpha6(data):
     alpha6 = -1 * correlation_open_volume
     return alpha6
 
-def alpha12(data): # Works - will have to drop the first day
-    delta_volume = data['Volume'].diff()
-    delta_close = data['Close'].diff()
+
+def alpha12(data):  # Works - will have to drop the first day
+    delta_volume = data["Volume"].diff()
+    delta_close = data["Close"].diff()
     return np.sign(delta_volume) * (-1 * delta_close)
 
-def alpha13(data): # drops the fist 4 values
+
+def alpha13(data):  # drops the fist 4 values
     # (-1 * rank(covariance(rank(close), rank(volume), 5)))
 
-    rank_close = data['Close'].rank()
-    rank_volume = data['Volume'].rank()
+    rank_close = data["Close"].rank()
+    rank_volume = data["Volume"].rank()
 
     covariance = rank_close.rolling(window=5).cov(rank_volume)
     rank_covariance = covariance.rank()
@@ -249,85 +249,95 @@ def alpha13(data): # drops the fist 4 values
     return -1 * rank_covariance
 
 
-
-
-def alpha14(data):  # Will have to drop the first 9 days from the dataset each time because they are all nan due to the
-                    # correlation being over the previous 10 days. This is expected, and we can offset this by including
-                    # 9 extra days at the beginning of the dataset, specifically for this alpha
+def alpha14(
+    data,
+):  # Will have to drop the first 9 days from the dataset each time because they are all nan due to the
+    # correlation being over the previous 10 days. This is expected, and we can offset this by including
+    # 9 extra days at the beginning of the dataset, specifically for this alpha
 
     # ((-1 * rank(delta(returns, 3))) * correlation(open, volume, 10))
 
-    delta_returns = ((data['Close'] - data['Open']) / data['Open']).diff(3)
-    open_volume_correlation = data['Open'].rolling(window=10).corr(data['Volume'])
+    delta_returns = ((data["Close"] - data["Open"]) / data["Open"]).diff(3)
+    open_volume_correlation = data["Open"].rolling(window=10).corr(data["Volume"])
     return -1 * delta_returns.rank() * open_volume_correlation
 
-def alpha15(data): # Works - will have to drop the first 6 days each time
+
+def alpha15(data):  # Works - will have to drop the first 6 days each time
 
     # (-1 * sum(rank(correlation(rank(high), rank(volume), 3)), 3))
 
-    high_rank = data['High'].rank()
-    volume_rank = data['Volume'].rank()
+    high_rank = data["High"].rank()
+    volume_rank = data["Volume"].rank()
     correlation = high_rank.rolling(window=3).corr(volume_rank)
-    rank_correlation = correlation.rolling(window=3).apply(lambda x: pd.Series(x).rank().iloc[-1])
+    rank_correlation = correlation.rolling(window=3).apply(
+        lambda x: pd.Series(x).rank().iloc[-1]
+    )
     return -1 * rank_correlation.rolling(window=3).sum()
 
 
-#These alphas contain external changing data over the hold period --> currently 2 months
+# These alphas contain external changing data over the hold period --> currently 2 months
 def alphaExt1(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #technology select sector SPDR fund 
-    tech_data = yf.Ticker('XLK').history(start=start_data, end=end_data)
-    tech = csv_to_dataframe.create_y(tech_data)
+    # technology select sector SPDR fund
+    tech_data = yf.Ticker("XLK").history(start=start_data, end=end_data)
+    tech = csv_to_dataframe.create_y(tech_data, data)
     return tech
+
 
 def alphaExt2(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #Financial select sector SPDR fund
-    tech_data = yf.Ticker('XLF').history(start=start_data, end=end_data)
+    # Financial select sector SPDR fund
+    tech_data = yf.Ticker("XLF").history(start=start_data, end=end_data)
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
+
 
 def alphaExt3(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #Health Care Select Sector SPDR Fund 
-    tech_data = yf.Ticker('XLV').history(start=start_data, end=end_data)
+    # Health Care Select Sector SPDR Fund
+    tech_data = yf.Ticker("XLV").history(start=start_data, end=end_data)
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
+
 
 def alphaExt4(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #Voliatility Index
-    tech_data = yf.Ticker('VIXY').history(start=start_data, end=end_data)
+    # Voliatility Index
+    tech_data = yf.Ticker("VIXY").history(start=start_data, end=end_data)
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
+
 
 def alphaExt5(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #S&P 500 Index
-    tech_data = yf.Ticker('SPY').history(start=start_data, end=end_data)
+    # S&P 500 Index
+    tech_data = yf.Ticker("SPY").history(start=start_data, end=end_data)
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
+
 
 def alphaExt6(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #Dow Jones Industrial Average
-    tech_data = yf.Ticker('DIA').history(start=start_data, end=end_data)
+    # Dow Jones Industrial Average
+    tech_data = yf.Ticker("DIA").history(start=start_data, end=end_data)
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
+
 
 def alphaExt7(data):
     start_data = data.index[0]
     end_data = data.index[-1]
-    #energy select sector SPDR fund
-    tech_data = yf.Ticker('XLE').history(start=start_data, end=end_data)
+    # energy select sector SPDR fund
+    tech_data = yf.Ticker("XLE").history(start=start_data, end=end_data)
     tech = csv_to_dataframe.create_y(tech_data)
     return tech
+
 
 def vwap(data):
     typical_price = (data["High"] + data["Low"] + data["Close"]) / 3
@@ -335,10 +345,11 @@ def vwap(data):
     vwap = (typical_price * data["Volume"]).sum() / data["Volume"]
     return vwap
 
-def alphas_to_df(data):
-    #TODO: add more alphas to this list
 
-    #before calculating alphas we need to standardize and normalize the data
+def alphas_to_df(data):
+    # TODO: add more alphas to this list
+
+    # before calculating alphas we need to standardize and normalize the data
     data = normalize_alphas.normalize_alphas(data)
     data = normalize_alphas.standardize_alphas(data)
 
@@ -360,25 +371,66 @@ def alphas_to_df(data):
     alphaExt6_df = alphaExt6(data)
     alphaExt7_df = alphaExt7(data)
     alpha54_df = alpha54(data)
-    
-    alphas_df = pd.concat([alpha1_df, alpha2_df, alpha3_df, alpha4_df, alpha5_df, alpha6_df, alpha12_df, alpha13_df, alpha14_df, alpha15_df, alpha54_df, alphaExt1_df, alphaExt2_df, alphaExt3_df, alphaExt4_df, alphaExt5_df, alphaExt6_df, alphaExt7_df], axis=1)
-    alphas_df.columns = ['alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5', 'alpha6', 'alpha12', 'alpha13', 'alpha14', 'alpha15', 'alpha54', 'alphaExt1', 'alphaExt2', 'alphaExt3', 'alphaExt4', 'alphaExt5', 'alphaExt6', 'alphaExt7']
-    alphas_df.fillna(method='ffill', inplace=True)
+
+    alphas_df = pd.concat(
+        [
+            alpha1_df,
+            alpha2_df,
+            alpha3_df,
+            alpha4_df,
+            alpha5_df,
+            alpha6_df,
+            alpha12_df,
+            alpha13_df,
+            alpha14_df,
+            alpha15_df,
+            alpha54_df,
+            alphaExt1_df,
+            alphaExt2_df,
+            alphaExt3_df,
+            alphaExt4_df,
+            alphaExt5_df,
+            alphaExt6_df,
+            alphaExt7_df,
+        ],
+        axis=1,
+    )
+    alphas_df.columns = [
+        "alpha1",
+        "alpha2",
+        "alpha3",
+        "alpha4",
+        "alpha5",
+        "alpha6",
+        "alpha12",
+        "alpha13",
+        "alpha14",
+        "alpha15",
+        "alpha54",
+        "alphaExt1",
+        "alphaExt2",
+        "alphaExt3",
+        "alphaExt4",
+        "alphaExt5",
+        "alphaExt6",
+        "alphaExt7",
+    ]
+    alphas_df.fillna(method="ffill", inplace=True)
     alphas_df.dropna(inplace=True)
     return alphas_df
 
 
 def main():
-    #import the csv we want to use to calculate alphas 
-    data = csv_to_dataframe.csv_to_dataframe('SPY_data_2022_2024.csv')
+    # import the csv we want to use to calculate alphas
+    data = csv_to_dataframe.csv_to_dataframe("SPY_data_2022_2024.csv")
 
     alphas_df = alphas_to_df(data)
     print(alphas_to_df(data))
 
     # #save the alphas to a csv file
-    #alphas_df.to_csv('alphas_SPY_2022_2024.csv')
+    # alphas_df.to_csv('alphas_SPY_2022_2024.csv')
 
-    #print(alphaExt4(data))
+    # print(alphaExt4(data))
 
 
 if __name__ == "__main__":

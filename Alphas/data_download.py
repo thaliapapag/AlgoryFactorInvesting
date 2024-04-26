@@ -28,7 +28,7 @@ class JSONEncoder(json.JSONEncoder):
 # For S&P 500, we can pull GICS from Wikipedia
 
 
-def get_spy_close(start_date="2018-1-1", end_date="2023-11-1", csv=True):
+def get_spy_close(start_date="2014-1-1", end_date="2024-1-1", csv=True):
     class CachedLimiterSession(
         CacheMixin, LimiterMixin, Session
     ):  # inherits three classes
@@ -88,7 +88,7 @@ def dictdf_to_dict(df):
 # https://stackoverflow.com/questions/20776189/concurrent-futures-vs-multiprocessing-in-python-3
 def get_spy_data(
     start_date="2018-1-1",
-    end_date="2023-11-1",
+    end_date="2024-1-1",
     tickers: list = [],
     processes=10,
     seconds=10,
@@ -172,7 +172,7 @@ def int_to_datetime(datetime_int):
     return date
 
 
-def get_spy_index_data(start_date="2018-1-1", end_date="2023-11-1", csv=True):
+def get_spy_index_data(start_date="2012-1-1", end_date="2024-1-1", csv=True):
     spy_data = yf.download(
         "SPY",
         start=start_date,
@@ -195,6 +195,7 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # get_spy_close()
-    get_spy_data()
+    # get_spy_data()
+    get_spy_close()
 
     print(f"Took {time.time()-start_time} seconds.")

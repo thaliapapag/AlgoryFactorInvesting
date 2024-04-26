@@ -8,6 +8,8 @@ import datetime
 from config import cfg
 from data_download import get_spy_tkr_data
 import ALPHAS_FINAL as alphas
+from csv_to_dataframe import create_y
+from ALPHAS_FINAL import alphas_to_df
 
 """
 To-Do:
@@ -50,10 +52,22 @@ for ticker in tqdm(tickers):
 
 
 # assumes that func only has data as arg (or as *args)
-def combine(func: str, data, w):
-    func = getattr(alphas, func)
+def combine_series(func_str: str, data, w):
+    func = getattr(alphas, func_str)
     df = func(data)
+    df.name = func_str
     df.map(lambda x: x * w)
+    return df
+
+
+def combine_df(func_str: str, data, weights):
+    # returns dataframe of all alphas
+    func = getattr(alphas, func_str)
+    df = func(data)
+
+    for alpha, w in weights.items():
+        df[alpha] = df[alpha].map(lambda x: w)
+
     return df
 
 
@@ -72,9 +86,11 @@ def unix_to_datetime(ts: int, strf_fmt=cfg.fmt):
     Takes unix timestep (which we have in json) and converts it into datetime object.
     @ts: unix timestamp, represented in miliseconds
     """
-    date_time = datetime.datetime.fromtimestamp(int(ts) / 1000)
-
-    return date_time.strftime(strf_fmt)
+    try:
+        date_time = datetime.datetime.fromtimestamp(int(ts) / 1000)
+        return date_time.strftime(strf_fmt)
+    except Exception as e:
+        print("Error in unix_to_datetime: ", e)
 
 
 # Care for race-condition-like edge case. We do not control for way orders are arranged.
@@ -84,18 +100,48 @@ def unix_to_datetime(ts: int, strf_fmt=cfg.fmt):
 for ticker, data in tqdm(zip(tickers, stock_data)):
     # element-wise linear combination
     calc = pd.DataFrame()
-    for func, w in weights.items():
-        calc = calc.join(combine(func, data, w), how="outer")
+    # for func, w in weights.items():
+    #     print(data.index)
+    #     data.index = data.index.map(lambda x: unix_to_datetime(x))
+    #     calc = calc.join(combine_series(func, data, w), how="outer")
+    #    y.dropna(inplace=True, axis=0)
+    #     res = y.agg("sum", axis="columns").apply(lambda x: convert_to_order(x, ticker))
 
-    calc.dropna(inplace=True, axis=0)
+    # JKLJF:DA
+    # data.index = data.index.map(lambda x: unix_to_datetime(x))
+    # calc = alphas_to_df(data)
 
-    res = calc.agg("sum", axis="columns").apply(lambda x: convert_to_order(x, ticker))
+    # print(calc)
+
+    # y, calcf = create_y(data, calc)
+
+    # print(y, data)
+
+    # print(calcf)
+
+    # res = y.apply(lambda x: convert_to_order(x, ticker))
+    # print(res)
+    # res.name = ticker
+
+    # orders = orders.join(res, how="outer")
+    pass
+
+for ticker in ["AAPL", "AMZN", "DIS", "GOOGL", "MSFT", "NFLX", "RL", "TSLA"]:
+    df = pd.read_csv(os.path.join(root, f"stock_x_y/{ticker}_x.csv")).set_index("Date")
+
+    for alpha in df.columns:
+        weight = weights[alpha]
+        df[alpha] = df[alpha] * weight
+
+    print(df.agg("sum", axis="columns"))
+
+    res = df.agg("sum", axis="columns").apply(lambda x: convert_to_order(x, ticker))
+    print(res)
     res.name = ticker
 
-    orders = orders.join(res, how="outer")
-
+orders = orders.join(res, how="outer")
 orders.dropna(inplace=True, axis=0)
-orders.index = orders.index.map(lambda x: unix_to_datetime(x))
+# orders.index = orders.index.map(lambda x: unix_to_datetime(x))
 
 cfg.setOrders(orders)
 

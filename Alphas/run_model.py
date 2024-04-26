@@ -12,7 +12,7 @@ root = "Alphas"
 
 
 def normalize_data(series: pd.Series) -> pd.Series:
-    return series.apply(lambda x: (x / (series.values[0]) - 1) * 100)
+    return (series / series.iloc[0] - 1) * 100
 
 
 def plot_all(data: pd.Series = portfolio_history, *args: List[Union[pd.Series, str]]):
@@ -25,14 +25,17 @@ def plot_all(data: pd.Series = portfolio_history, *args: List[Union[pd.Series, s
         fig, ax = plt.subplots()
         data = normalize_data(data).to_frame()
         for series, label in args:
-            if type(series) == pd.DataFrame:
+            if isinstance(series, pd.DataFrame):
                 if len(series.columns) > 1:
                     raise InvalidPlotArgument
                 series = series.iloc[:, 0]
-            print(series)
-            series.name = label
+            normalized_series = normalize_data(series)
+            normalized_series.name = label
             data = data.merge(
-                normalize_data(series), how="left", left_index=True, right_index=True
+                normalized_series.to_frame(),
+                how="left",
+                left_index=True,
+                right_index=True,
             )
 
         ax.set_xlabel("Time")
@@ -80,6 +83,8 @@ class InvalidPlotArgument(Exception):
 
 if __name__ == "__main__":
     start_time = time.time()
+
+    orders = orders[:500]
 
     settings = cfg.exog
     start_date = orders.index[0]

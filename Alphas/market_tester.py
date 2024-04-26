@@ -166,20 +166,24 @@ def sell_stock(symbol, quantity, price, timestamp):
 def run_daily_instructions(current_day: str, instructions=list[list]):
     # print(instructions, type(instructions))
     # TODO: Add concurrency
-    for order in instructions:
-        order_type, symbol, quantity = order
+    try:
+        for order in instructions:
+            order_type, symbol, quantity = order
 
-        price = float(database.loc[current_day][symbol])
+            price = float(database.loc[current_day][symbol])
 
-        if order_type == "BUY":
-            buy_stock(symbol, quantity, price, current_day)
-        elif order_type == "SELL":
-            sell_stock(symbol, quantity, price, current_day)
-        else:
-            print(f"Invalid order{order}")
-            return
+            if order_type == "BUY":
+                buy_stock(symbol, quantity, price, current_day)
+            elif order_type == "SELL":
+                sell_stock(symbol, quantity, price, current_day)
+            else:
+                print(f"Invalid order{order}")
+                return
 
         # print(f"{order_type: <4} {symbol: <4} on {current_day}: {float(price):.2f}")
+    except Exception as e:
+        print(e)
+        return
 
 
 def run_timeline(orders: pd.DataFrame, start_date: str, end_date: str):
