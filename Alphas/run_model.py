@@ -3,6 +3,8 @@ from market_tester import (
     print_results,
     portfolio_history,
     portfolio_value,
+    blockPrint,
+    enablePrint,
 )
 from factor_model import orders, cfg, process_xy
 import time
@@ -108,10 +110,12 @@ def sort_csv(csv_path="Backtests/log.txt"):
     print(df, df.columns)
     df.sort_values(by=["RETURN"], ascending=False, inplace=True)
 
-    df.to_csv()
+    df.to_csv(os.path.join(root, csv_path), index=False)
 
 
-def random_trials(trials=100):
+def random_trials(trials=100, blockPrints=True):
+    if blockPrints:
+        blockPrint()
     for _ in tqdm(range(trials)):
         t_sell, t_buy = random_thresholds()
         # Modify cfg object directly later instead of this spaghetti
@@ -126,7 +130,7 @@ def run_iteration(t_buy, t_sell):
 
     run_timeline(orders, start_date, end_date)
     print_results()
-    write_to_backtest_csv(portfolio_value(), t_buy, t_sell)
+    write_to_backtest_csv(portfolio_value(False, orders.index[-1]), t_buy, t_sell)
 
 
 if __name__ == "__main__":
@@ -136,12 +140,13 @@ if __name__ == "__main__":
     settings = cfg.exog
     spy_data = pd.read_csv(os.path.join(root, "Data/spy_index.csv")).set_index("Date")
 
-    orders = process_xy(1.2851, 1.2185)
+    orders = process_xy(1.2814, 1.245)
     orders = orders[:500]
     start_date = orders.index[0]
     end_date = orders.index[-1]
 
-    run_iteration(t_buy=1.2851, t_sell=1.2185)
+    # random_trials(1000)
+    # run_iteration(t_buy=1.2814, t_sell=1.245)
 
     # spy_data = pd.read_csv(os.path.join(root, "Data/spy_index.csv")).set_index("Date")
 
