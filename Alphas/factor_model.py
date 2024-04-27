@@ -72,10 +72,12 @@ def combine_df(func_str: str, data, weights):
 
 
 # order_type, symbol, quantity = order
-def convert_to_order(num, ticker):
-    if num > THRESHOLD_BUY:
+def convert_to_order(
+    num, ticker, threshold_buy=THRESHOLD_BUY, threshold_sell=THRESHOLD_SELL
+):
+    if num > threshold_buy:
         return ["BUY", ticker, ORDER_SIZE]
-    elif num < THRESHOLD_SELL:
+    elif num < threshold_sell:
         return ["SELL", ticker, ORDER_SIZE]
 
     return ["HOLD", ticker, ORDER_SIZE]
@@ -94,6 +96,32 @@ def unix_to_datetime(ts: int, strf_fmt=cfg.fmt):
 
 
 # Care for race-condition-like edge case. We do not control for way orders are arranged.
+
+
+def process_xy(threshold_buy, threshold_sell):
+    # For Thalia's implementation
+    orders = pd.DataFrame()
+    for ticker in ["AAPL", "AMZN", "DIS", "GOOGL", "MSFT", "NFLX", "RL", "TSLA"]:
+        df = pd.read_csv(os.path.join(root, f"stock_x_y/{ticker}_x.csv")).set_index(
+            "Date"
+        )
+
+        for alpha in df.columns:
+            weight = weights[alpha]
+            df[alpha] = df[alpha] * weight
+
+        combined = df.agg("sum", axis="columns")
+        res = combined.apply(
+            lambda x: convert_to_order(x, ticker, threshold_buy, threshold_sell)
+        )
+        print(res)
+        res.name = ticker
+
+        orders = orders.join(res, how="outer")
+        orders.dropna(inplace=True, axis=0)
+
+    return orders
+
 
 # Generate orders
 
@@ -125,28 +153,14 @@ for ticker, data in tqdm(zip(tickers, stock_data)):
 
     # orders = orders.join(res, how="outer")
     pass
-
-for ticker in ["AAPL", "AMZN", "DIS", "GOOGL", "MSFT", "NFLX", "RL", "TSLA"]:
-    df = pd.read_csv(os.path.join(root, f"stock_x_y/{ticker}_x.csv")).set_index("Date")
-
-    for alpha in df.columns:
-        weight = weights[alpha]
-        df[alpha] = df[alpha] * weight
-
-    print(df.agg("sum", axis="columns"))
-
-    res = df.agg("sum", axis="columns").apply(lambda x: convert_to_order(x, ticker))
-    print(res)
-    res.name = ticker
-
-orders = orders.join(res, how="outer")
-orders.dropna(inplace=True, axis=0)
 # orders.index = orders.index.map(lambda x: unix_to_datetime(x))
 
-cfg.setOrders(orders)
+if __name__ == "__main__":
+    orders = process_xy(THRESHOLD_BUY, THRESHOLD_SELL)
 
-print(orders)
-print(f"Done. Took {time.time()-start_time:.2f} seconds.")
+    cfg.setOrders(orders)
 
+    print(orders)
+    print(f"Done. Took {time.time()-start_time:.2f} seconds.")
 
-# https://python-course.eu/numerical-programming/linear-combinations-in-python.php
+    # https://python-course.eu/numerical-programming/linear-combinations-in-python.php

@@ -1,11 +1,19 @@
-from market_tester import run_timeline, print_results, portfolio_history
-from factor_model import orders, cfg
+from market_tester import (
+    run_timeline,
+    print_results,
+    portfolio_history,
+    portfolio_value,
+)
+from factor_model import orders, cfg, process_xy
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import os
 from typing import List, Union
+from config import random_thresholds
+from tqdm import tqdm
+import csv
 
 
 root = "Alphas"
@@ -22,6 +30,7 @@ def plot_all(data: pd.Series = portfolio_history, *args: List[Union[pd.Series, s
     """
     try:
         portfolio_history.name = "Factor Investing"
+        portfolio_history.index = orders.index
         fig, ax = plt.subplots()
         data = normalize_data(data).to_frame()
         for series, label in args:
@@ -86,21 +95,58 @@ class InvalidPlotArgument(Exception):
         super().__init__(self.message)
 
 
-if __name__ == "__main__":
-    start_time = time.time()
+def write_to_backtest_csv(result, t_buy, t_sell, csv_path="Backtests/log.txt"):
+    line = {"t_buy": t_buy, "t_sell": t_sell, "RETURN": result}
 
+    with open(os.path.join(root, csv_path), "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=line.keys())
+        writer.writerow(line)
+
+
+def sort_csv(csv_path="Backtests/log.txt"):
+    df = pd.read_csv(os.path.join(root, csv_path))
+    print(df, df.columns)
+    df.sort_values(by=["RETURN"], ascending=False, inplace=True)
+
+    df.to_csv()
+
+
+def random_trials(trials=100):
+    for _ in tqdm(range(trials)):
+        t_sell, t_buy = random_thresholds()
+        # Modify cfg object directly later instead of this spaghetti
+        run_iteration(t_buy=t_buy, t_sell=t_sell)
+
+
+def run_iteration(t_buy, t_sell):
+    orders = process_xy(t_buy, t_sell)
     orders = orders[:500]
-
-    settings = cfg.exog
     start_date = orders.index[0]
     end_date = orders.index[-1]
 
     run_timeline(orders, start_date, end_date)
     print_results()
+    write_to_backtest_csv(portfolio_value(), t_buy, t_sell)
 
+
+if __name__ == "__main__":
+    sort_csv()
+    start_time = time.time()
+
+    settings = cfg.exog
     spy_data = pd.read_csv(os.path.join(root, "Data/spy_index.csv")).set_index("Date")
 
-    portfolio_history.index = orders.index
+    orders = process_xy(1.2851, 1.2185)
+    orders = orders[:500]
+    start_date = orders.index[0]
+    end_date = orders.index[-1]
+
+    run_iteration(t_buy=1.2851, t_sell=1.2185)
+
+    # spy_data = pd.read_csv(os.path.join(root, "Data/spy_index.csv")).set_index("Date")
+
+    # portfolio_history.index = orders.index
+    sort_csv()
     plot_all(portfolio_history, [spy_data, "SPY"])
 
     print(f"Done. Took {time.time()-start_time:.2f} seconds.")

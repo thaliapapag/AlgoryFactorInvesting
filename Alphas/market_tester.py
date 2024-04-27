@@ -22,6 +22,24 @@ from config import cfg
 
 # from helper import get_market_start_date
 
+import sys
+
+
+# Disable
+def blockPrint():
+    sys.stdout = open(os.devnull, "w")
+
+
+# Restore
+def enablePrint():
+    sys.stdout = sys.__stdout__
+
+
+# blockPrint()
+
+# to unblock print
+# sys.stdout = sys.__stdout__
+
 settings = cfg.broker_opt
 root = "Alphas"
 
@@ -194,7 +212,12 @@ def run_timeline(orders: pd.DataFrame, start_date: str, end_date: str):
     start_date = datetime.datetime.strptime(start_date, format)
     end_date = datetime.datetime.strptime(end_date, format)
     to_sell = []
-    global day_number, daytracker, portfolio_history
+
+    global day_number, daytracker, portfolio_history, positions, total_value, current_capital
+
+    positions = {}
+    current_capital = cfg.INITIAL_CAPITAL
+    total_value = current_capital
 
     day_number = 0
 
